@@ -125,11 +125,11 @@ const priceComputed = computed(() => {
 
 const images = ref([
     '',
-    'https://loremflickr.com/640/480?random=21',
-    'https://loremflickr.com/640/480?random=22',
-    'https://loremflickr.com/640/480?random=23',
-    'https://loremflickr.com/640/480?random=24',
-    'https://loremflickr.com/640/480?random=25',
+    'https://loremflickr.com/640/420?random=21',
+    'https://loremflickr.com/640/420?random=22',
+    'https://loremflickr.com/640/420?random=23',
+    'https://loremflickr.com/640/420?random=24',
+    'https://loremflickr.com/640/420?random=25',
 ])
 
 const addToCart = () => {
