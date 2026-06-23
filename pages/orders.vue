@@ -1,62 +1,65 @@
 <template>
     <MainLayout>
-        <div id="OrdersPage" class="mt-4 max-w-[1200px] mx-auto px-2 min-h-[50vh]">
-            <div class="bg-white w-full p-6 min-h-[150px]">
+        <main id="OrdersPage" class="ui-page mt-4 min-h-[50vh]">
+            <section class="ui-panel p-5">
                 <div class="flex items-center text-xl">
-                    <Icon name="carbon:delivery" color="#5FCB04" size="35"/>
-                    <span class="pl-4">Orders</span>
+                    <Icon name="carbon:delivery" class="text-market-green" size="34"/>
+                    <h1 class="ui-title pl-4 text-2xl">Orders</h1>
                 </div>
-                <div 
-                    v-if="orders && orders.data" 
-                    v-for="order in orders.data" 
-                    class="text-sm pl-[50px]"
-                >
-                    <div class="border-b py-1">
-                        <p>Stripe ID: {{ order.stripeId }}</p>
 
-                        <div class="pt-2"></div>
+                <div v-if="orders.length" class="mt-4 space-y-4">
+                    <article
+                        v-for="order in orders"
+                        :key="order.id"
+                        class="rounded-lg border border-market-line p-4 text-sm"
+                    >
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="ui-span font-semibold text-market-ink">Order #{{ order.id }}</span>
+                            <span class="ui-span rounded-full bg-market-canvas px-3 py-1 text-xs font-semibold text-market-muted">Stripe: {{ order.stripeId }}</span>
+                        </div>
 
-                        <div v-for="item in order.orderItem">
-                            <NuxtLink 
-                                class="flex items-center gap-3 p-1 hover:underline hover:text-blue-500" 
+                        <div class="mt-3 space-y-2">
+                            <NuxtLink
+                                v-for="item in order.orderItem"
+                                :key="item.id"
+                                class="flex items-center gap-3 rounded-lg p-2 hover:bg-market-canvas"
                                 :to="`/item/${item.productId}`"
                             >
-                                <img width="40" :src="item.product.url">
-                                {{ item.product.title }}
+                                <img class="h-12 w-12 rounded-md object-cover" :src="item.product.url" :alt="item.product.title">
+                                <span class="ui-span line-clamp-1">{{ item.product.title }}</span>
                             </NuxtLink>
                         </div>
 
-                        <div class="pt-2 pb-5">
+                        <div class="mt-3 rounded-lg bg-market-canvas p-3 text-market-muted">
                             Delivery Address: {{ order.name }}, {{ order.address }}, {{ order.zipcode }}, {{ order.city }}, {{ order.country }}
                         </div>
-                    </div>
+                    </article>
                 </div>
 
-                <div v-else class="flex items-center justify-center">
-                    You have no order history
+                <div v-else class="mt-6 rounded-lg bg-market-canvas p-6 text-center text-market-muted">
+                    You have no order history yet.
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
     </MainLayout>
 </template>
 
 <script setup>
 import MainLayout from '~/layouts/MainLayout.vue';
 import { useUserStore } from '~/stores/user';
+
+definePageMeta({ middleware: "auth" })
+
 const userStore = useUserStore()
-const user = useSupabaseUser()
+const userId = useCurrentUserId()
+const orders = ref([])
 
-let orders = ref(null)
-
-onBeforeMount(async () => {
-    orders.value = await useFetch(`/api/prisma/get-all-orders-by-user/${user.value.id}`)
-})
-
-onMounted(() => {
-    if (!user.value) {
+onMounted(async () => {
+    if (!userId.value) {
         return navigateTo('/auth')
     }
 
-    setTimeout(() => userStore.isLoading = false, 200)
+    orders.value = await $fetch(`/api/prisma/get-all-orders-by-user/${userId.value}`)
+    userStore.isLoading = false
 })
 </script>

@@ -1,63 +1,55 @@
 <template>
-    <div 
+    <article
         :id="`ProductComponent${product.id}`"
-        class="
-            bg-white 
-            inline-block 
-            rounded 
-            hover:shadow-[0_0_10px_3px_rgba(0,0,0,0.15)] 
-            cursor-pointer
-        "
+        class="group h-full overflow-hidden rounded-lg border border-market-line bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-market"
     >
-        <NuxtLink :to="`/item/${product.id}`">
-            <img 
-                class="rounded-t "
-                :src="product.url"
-            >
+        <NuxtLink :to="`/item/${product.id}`" class="flex h-full flex-col">
+            <div class="aspect-[4/3] overflow-hidden bg-market-canvas">
+                <img
+                    class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                    :src="product.url"
+                    :alt="product.title"
+                    loading="lazy"
+                >
+            </div>
 
-            <div id="ProductDetails">
-            
-                <span class="flex items-center justify-start gap-3 px-1 pt-1">
-                    <span class="text-[#FF6674] font-semibold">${{ priceComputed }}</span>
-                    <span class="text-gray-500 text-sm text-light line-through">${{ oldPriceComputed }}</span>
-                </span>
-
-                <span class="px-1 relative -top-1.5 text-[#FF6674] text-xs font-semibold">
-                    Extra 5% off
-                </span>
-
-                <div class="flex items-center gap-1 px-1 relative -top-1">
-                    <span class="bg-[#FD374F] text-white text-[9px] font-semibold px-1.5 rounded-sm">Welcome Deal</span>
-                    <span class="bg-[#F5F5F5] border text-[#C08562] text-[9px] font-semibold px-1.5 rounded-sm">Top Selling</span>
+            <div id="ProductDetails" class="flex flex-1 flex-col gap-2 p-3">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="ui-span text-lg font-extrabold text-market-red">${{ priceComputed }}</span>
+                    <span class="ui-span text-sm text-market-muted line-through">${{ oldPriceComputed }}</span>
                 </div>
 
-                <p class="flex items-center px-1 pt-0.5 text-xs text-[#252525]">
-                    5,000+ sold <Icon name="material-symbols:star-rate" color="#757575" class="ml-1.5"/> 4.7
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="ui-span rounded bg-market-red px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Today deal</span>
+                    <span class="ui-span rounded border border-[#E7D0BD] bg-[#FFF8F2] px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#A15F2B]">Top rated</span>
+                </div>
+
+                <p class="line-clamp-2 min-h-10 text-sm leading-5 text-market-ink">
+                    {{ product.title }}
                 </p>
 
-                <p class="px-1 pt-0.5 text-xs text-[#252525]">
-                    {{ product.title.substring(0,60) }}
-                </p>
-
-                <p class="px-1 pb-1">
-                    <span class="text-[#009A66] text-xs font-semibold">Free Shipping</span>
-                </p>
-
+                <div class="mt-auto flex items-center justify-between gap-2 text-xs text-market-muted">
+                    <span class="ui-span flex items-center gap-1">
+                        <Icon name="material-symbols:star-rate" class="text-market-amber"/>
+                        4.8
+                    </span>
+                    <span class="ui-span font-semibold text-market-green">Free shipping</span>
+                </div>
             </div>
         </NuxtLink>
-    </div>
+    </article>
 </template>
 
 <script setup>
-    const props = defineProps(['product'])
-    const { product } = toRefs(props)
+const props = defineProps(['product'])
+const { product } = toRefs(props)
 
-    const priceComputed = computed(() => {
-        return product.value.price / 100
-    })
+const priceComputed = computed(() => {
+    return (product.value.price / 100).toFixed(2)
+})
 
-    const oldPriceComputed = computed(() => {
-        let res =  (product.value.price + (product.value.price / 20))  / 100
-        return res.toFixed(2)
-    })
+const oldPriceComputed = computed(() => {
+    let res =  (product.value.price + (product.value.price / 5))  / 100
+    return res.toFixed(2)
+})
 </script>

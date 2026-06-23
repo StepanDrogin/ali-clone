@@ -1,29 +1,22 @@
 <template>
     <MainLayout>
-        <div id="ShoppingCartPage" class="mt-4 max-w-[1200px] mx-auto px-2">
-            <div v-if="!userStore.cart.length" class="h-[500px] flex items-center justify-center">
-                <div class="pt-20">
-                    <img 
+        <main id="ShoppingCartPage" class="ui-page mt-4">
+            <div v-if="!userStore.cart.length" class="flex min-h-[520px] items-center justify-center">
+                <div class="ui-panel max-w-md p-8 text-center">
+                    <img
                         class="mx-auto"
-                        width="250"
+                        width="220"
                         src="/cart-empty.png"
+                        alt="Empty cart"
                     >
 
-                    <div class="text-xl text-center mt-4">No items yet?</div>
+                    <h1 class="ui-title mt-5 text-2xl">Your cart is empty</h1>
+                    <p class="mt-2 text-sm text-market-muted">Add a few products from the catalog to continue the checkout flow.</p>
 
-                    <div v-if="!user" class="flex text-center">
-                        <NuxtLink 
+                    <div v-if="!user" class="mt-5 flex text-center">
+                        <NuxtLink
                             to="/auth"
-                            class="
-                                bg-[#FD374F] 
-                                w-full 
-                                text-white 
-                                text-[21px] 
-                                font-semibold 
-                                p-1.5 
-                                rounded-full
-                                mt-4
-                            "
+                            class="w-full rounded-full bg-market-red p-2 text-[18px] font-semibold text-white hover:bg-[#D92F43]"
                         >
                             Sign in
                         </NuxtLink>
@@ -31,94 +24,73 @@
                 </div>
             </div>
 
-            <div v-else class="md:flex gap-4 justify-between mx-auto w-full">
-                <div class="md:w-[65%]">
-                    <div class="bg-white rounded-lg p-4">
-
-                        <div class="text-2xl font-bold mb-2">
-                            Shopping Cart ({{ userStore.cart.length }})
-                        </div>
-
+            <div v-else class="grid gap-4 md:grid-cols-[1fr_380px]">
+                <section>
+                    <div class="ui-panel p-4">
+                        <h1 class="ui-title text-2xl">Shopping Cart ({{ userStore.cart.length }})</h1>
+                        <p class="mt-1 text-sm text-market-muted">Select items for checkout or continue with the whole cart.</p>
                     </div>
 
-                    <div class="bg-[#FEEEEF] rounded-lg p-4 mt-4">
-                        <div class="text-red-500 font-bold">Welcome Deal applicable on 1 item only</div>
+                    <div class="mt-4 rounded-lg border border-[#FFD7DC] bg-[#FFF0F2] p-4">
+                        <div class="font-bold text-market-red">Today deal applies to selected demo products</div>
                     </div>
 
-                    <div id="Items" class="bg-white rounded-lg p-4 mt-4">
-                        <div v-for="product in userStore.cart">
-                            <CartItem 
-                                :product="product" 
-                                :selectedArray="selectedArray"
-                                @selectedRadio="selectedRadioFunc"
-                            />
-                        </div>
+                    <div id="Items" class="ui-panel mt-4 p-4">
+                        <CartItem
+                            v-for="product in userStore.cart"
+                            :key="product.id"
+                            :product="product"
+                            @selectedRadio="selectedRadioFunc"
+                        />
                     </div>
-                </div>
+                </section>
 
-                <div class="md:hidden block my-4"/>
-                <div class="md:w-[35%]">
-                    <div id="Summary" class="bg-white rounded-lg p-4">
-                        <div class="text-2xl font-extrabold mb-2">Summary</div>
-                        <div class="flex items-center justify-between my-4">
+                <aside>
+                    <div id="Summary" class="ui-panel p-4">
+                        <h2 class="ui-title text-2xl">Summary</h2>
+                        <div class="my-4 flex items-center justify-between">
                             <div class="font-semibold">Total</div>
                             <div class="text-2xl font-semibold">
-                                $ <span class="font-extrabold">{{ totalPriceComputed }}</span>
+                                $ <span class="ui-span font-extrabold">{{ totalPriceComputed }}</span>
                             </div>
                         </div>
-                        <button 
+                        <button
                             @click="goToCheckout"
-                            class="
-                                flex
-                                items-center
-                                justify-center
-                                bg-[#FD374F] 
-                                w-full 
-                                text-white 
-                                text-[21px] 
-                                font-semibold 
-                                p-1.5 
-                                rounded-full
-                                mt-4
-                            "
+                            class="ui-button flex w-full items-center justify-center rounded-full bg-market-red p-2 text-[20px] font-semibold text-white hover:bg-[#D92F43]"
                         >
                             Checkout
                         </button>
                     </div>
 
-                    <div id="PaymentProtection" class="bg-white rounded-lg p-4 mt-4">
-
-                        <div class="text-lg font-semibold mb-2">Payment methods</div>
-                        <div class="flex items-center justify-start gap-8 my-4">
-                            <div v-for="card in cards">
-                                <img class="h-6" :src="card">
-                            </div>
+                    <div id="PaymentProtection" class="ui-panel mt-4 p-4">
+                        <h2 class="ui-title mb-2 text-lg">Payment methods</h2>
+                        <div class="my-4 flex items-center justify-start gap-8">
+                            <img v-for="card in cards" :key="card" class="h-6" :src="card" :alt="card">
                         </div>
 
-                        <div class="border-b"/>
+                        <div class="border-b border-market-line"/>
 
-                        <div class="text-lg font-semibold mb-2 mt-2">Buyer Protection</div>
-                        <p class="my-2">
-                            Get full refund if the item is not as described or if is not delivered
+                        <h2 class="ui-title mb-2 mt-3 text-lg">Buyer Protection</h2>
+                        <p class="my-2 text-sm text-market-muted">
+                            Get a full refund if an item is not as described or is not delivered.
                         </p>
-
                     </div>
-                </div>
+                </aside>
             </div>
-        </div>
+        </main>
     </MainLayout>
 </template>
 
 <script setup>
 import MainLayout from '~/layouts/MainLayout.vue';
 import { useUserStore } from '~/stores/user';
+
 const userStore = useUserStore()
 const user = useSupabaseUser()
-
-let selectedArray = ref([])
+const selectedProductIds = ref([])
 
 onMounted(() => {
-    setTimeout(() => userStore.isLoading = false, 200)
+    userStore.isLoading = false
 })
 
 const cards = ref([
@@ -128,42 +100,32 @@ const cards = ref([
     'applepay.png',
 ])
 
-const totalPriceComputed = computed(() => {
-    let price = 0
-    userStore.cart.forEach(prod => {
-        price += prod.price
-    })
-    return price / 100
+const formatPrice = (value) => (Number(value || 0) / 100).toFixed(2)
+
+const selectedProducts = computed(() => {
+    if (!selectedProductIds.value.length) {
+        return userStore.cart
+    }
+
+    return userStore.cart.filter((item) => selectedProductIds.value.includes(item.id))
 })
 
-const selectedRadioFunc = (e) => {
+const totalPriceComputed = computed(() => {
+    const price = selectedProducts.value.reduce((sum, prod) => sum + Number(prod.price || 0), 0)
+    return formatPrice(price)
+})
 
-    if (!selectedArray.value.length) {
-        selectedArray.value.push(e)
+const selectedRadioFunc = ({ id, val }) => {
+    if (val && !selectedProductIds.value.includes(id)) {
+        selectedProductIds.value.push(id)
         return
     }
 
-    selectedArray.value.forEach((item, index) => {
-        if (e.id != item.id) {
-            selectedArray.value.push(e)
-        } else {
-            selectedArray.value.splice(index, 1);
-        }
-    })
+    selectedProductIds.value = selectedProductIds.value.filter((itemId) => itemId !== id)
 }
 
 const goToCheckout = () => {
-    let ids = []
-    userStore.checkout = []
-
-    selectedArray.value.forEach(item => ids.push(item.id))
-
-    let res = userStore.cart.filter((item) => {
-        return ids.indexOf(item.id) != -1
-    })
-
-    res.forEach(item => userStore.checkout.push(toRaw(item)))
-
+    userStore.checkout = selectedProducts.value.map((item) => toRaw(item))
     return navigateTo('/checkout')
 }
 </script>

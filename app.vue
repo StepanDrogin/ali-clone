@@ -15,14 +15,21 @@ import { useUserStore } from '~/stores/user';
 const userStore = useUserStore()
 
 const route = useRoute()
-
-let windowWidth = ref(process.client ? window.innerWidth : '')
+let windowWidth = ref(0)
+let removeResizeListener = null
 
 onMounted(() => {
     userStore.isLoading = true
-    window.addEventListener('resize', function () {
+    windowWidth.value = window.innerWidth
+    const onResize = () => {
         windowWidth.value = window.innerWidth;
-    });
+    }
+    window.addEventListener('resize', onResize);
+    removeResizeListener = () => window.removeEventListener('resize', onResize)
+})
+
+onBeforeUnmount(() => {
+    removeResizeListener?.()
 })
 
 watch(() => windowWidth.value, () => {

@@ -1,229 +1,184 @@
 <template>
-    <div id="MainLayout" class="w-full fixed z-50">
-        <div 
-            id="TopMenu"
-            class="w-full bg-[#FAFAFA] border-b md:block hidden"
-        >
-            <ul 
-                class="
-                    flex 
-                    items-center 
-                    justify-end
-                    text-xs 
-                    text-[#333333]
-                    font-light 
-                    px-2 
-                    h-10
-                    bg-[#FAFAFA] 
-                    max-w-[1200px] 
-                "
-            >
-                <li class="border-r border-r-gray-400 px-3 hover:text-[#FF4646] cursor-pointer">
-                    Sell on AliExpress
-                </li>
-                <li class="border-r border-r-gray-400 px-3 hover:text-[#FF4646] cursor-pointer">
-                    Cookie Preferences
-                </li>
-                <li class="border-r border-r-gray-400 px-3 hover:text-[#FF4646] cursor-pointer">
-                    Help
-                </li>
-                <li class="border-r border-r-gray-400 px-3 hover:text-[#FF4646] cursor-pointer">
-                    Buyer Protection
-                </li>
-                <li class="px-3 hover:text-[#FF4646] cursor-pointer">
-                    <Icon name="ic:sharp-install-mobile" size="17"/>
-                    App
-                </li>
-                <li 
-                    @mouseenter="isAccountMenu = true"
-                    @mouseleave="isAccountMenu = false"
-                    class="relative flex items-center px-2.5 hover:text-[#FF4646] h-full cursor-pointer"
-                    :class="isAccountMenu ? 'bg-white border z-40 shadow-[0_15px_100px_40px_rgba(0,0,0,0.3)]' : 'border border-[#FAFAFA]'"
-                >
-                    <Icon name="ph:user-thin" size="17"/>
-                    Account
-                    <Icon name="mdi:chevron-down" size="15" class="ml-5"/>
-
-                    <div 
-                        id="AccountMenu" 
-                        v-if="isAccountMenu"
-                        class="absolute bg-white w-[220px] text-[#333333] z-40 top-[38px] -left-[100px] border-x border-b"
-                    >
-                        <div v-if="!user">
-                            <div class="text-semibold text-[15px] my-4 px-3">Welcome to AliExpress!</div>
-                            <div class="flex items-center gap-1 px-3 mb-3">
-                                <NuxtLink 
-                                    to="/auth"
-                                    class="bg-[#FF4646] text-center w-full text-[16px] rounded-sm text-white font-semibold p-2"
-                                >
-                                    Login / Register
-                                </NuxtLink>
-                            </div>
-                        </div>
-                        <div class="border-b"/>
-                        <ul class="bg-white ">
-                            <li 
-                                @click="navigateTo('/orders')"
-                                class="text-[13px] py-2 px-4 w-full hover:bg-gray-200"
-                            >
-                            My Orders
-                            </li>
-                            <li 
-                                v-if="user" 
-                                @click="client.auth.signOut()"
-                                class="text-[13px] py-2 px-4 w-full hover:bg-gray-200"
-                            >
-                                Sign out
-                            </li>
-                        </ul>
-                        
-                    </div>
-                </li>
+    <div id="MainLayout" class="fixed inset-x-0 top-0 z-50 border-b border-market-line bg-white/95 backdrop-blur">
+        <div class="hidden border-b border-market-line bg-[#FAFAFA] md:block">
+            <ul class="mx-auto flex h-9 max-w-[1200px] items-center justify-end gap-5 px-3 text-xs text-market-muted">
+                <li class="cursor-pointer hover:text-market-red">Seller center</li>
+                <li class="cursor-pointer hover:text-market-red">Buyer protection</li>
+                <li class="cursor-pointer hover:text-market-red">Help</li>
+                <li class="cursor-pointer hover:text-market-red">Download app</li>
             </ul>
         </div>
-        <div 
-            id="MainHeader" 
-            class="flex items-center w-full bg-white"
-        >
-            <div class="flex lg:justify-start justify-between gap-10 max-w-[1150px] w-full px-3 py-5 mx-auto">
-                <NuxtLink to="/" class="min-w-[170px]">
-                    <img 
-                        width="170"
-                        src="/AliExpress-logo.png"
+
+        <header class="mx-auto flex max-w-[1200px] items-center gap-4 px-3 py-4">
+            <NuxtLink to="/" class="flex min-w-fit items-center gap-2" aria-label="Market Express home">
+                <span class="ui-span flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-market-red to-market-orange text-lg font-black text-white">M</span>
+                <span class="ui-span hidden text-xl font-extrabold tracking-normal text-market-ink sm:inline">Market Express</span>
+            </NuxtLink>
+
+            <div class="relative hidden w-full md:block">
+                <div class="flex h-11 items-center overflow-hidden rounded-lg border-2 border-market-red bg-white">
+                    <input
+                        v-model="searchItem"
+                        class="h-full w-full px-4 text-sm text-market-ink placeholder:text-market-muted focus:outline-none"
+                        placeholder="Search products"
+                        type="search"
+                        autocomplete="off"
                     >
-                </NuxtLink>
+                    <Icon
+                        v-if="isSearching"
+                        name="eos-icons:loading"
+                        size="24"
+                        class="mr-2 text-market-red"
+                    />
+                    <button class="ui-button flex h-full items-center justify-center bg-market-red px-4 text-white hover:bg-[#D92F43]" aria-label="Search">
+                        <Icon name="ph:magnifying-glass" size="21" />
+                    </button>
+                </div>
 
-                <div class="max-w-[700px] w-full md:block hidden">
-                    <div class="relative">
-                        <div class="flex items-center border-2 border-[#FF4646] rounded-md w-full">
-                            <input 
-                                class="
-                                    w-full
-                                    placeholder-gray-400
-                                    text-sm
-                                    pl-3
-                                    focus:outline-none
-                                "
-                                placeholder="kitchen accessories"
-                                type="text"
-                                v-model="searchItem"
-                            >
-                            <Icon 
-                                v-if="isSearching" 
-                                name="eos-icons:loading" 
-                                size="25" 
-                                class="mr-2"
-                            />
-                            <button class="flex items-center h-[100%] p-1.5 px-2 bg-[#FF4646]">
-                                <Icon name="ph:magnifying-glass" size="20" color="#ffffff"/>
-                            </button>
+                <div v-if="searchItem && searchResults.length" class="absolute left-0 right-0 top-[52px] z-50 overflow-hidden rounded-lg border border-market-line bg-white shadow-market">
+                    <NuxtLink
+                        v-for="item in searchResults"
+                        :key="item.id"
+                        :to="`/item/${item.id}`"
+                        class="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-market-canvas"
+                        @click="clearSearch"
+                    >
+                        <div class="flex min-w-0 items-center gap-3">
+                            <img class="h-11 w-11 rounded-md object-cover" :src="item.url" :alt="item.title">
+                            <span class="ui-span truncate text-market-ink">{{ item.title }}</span>
                         </div>
+                        <span class="ui-span font-semibold text-market-red">${{ formatPrice(item.price) }}</span>
+                    </NuxtLink>
+                </div>
+            </div>
 
-                        <div class="absolute bg-white max-w-[700px] h-auto w-full">
-                            <div 
-                                v-if="items && items.data" 
-                                v-for="item in items.data" 
-                                class="p-1"
+            <div class="ml-auto flex items-center gap-2">
+                <div
+                    class="relative hidden h-11 items-center md:flex"
+                    @mouseenter="isAccountMenu = true"
+                    @mouseleave="isAccountMenu = false"
+                >
+                    <button class="ui-button flex h-11 items-center gap-2 rounded-lg border border-market-line px-3 text-sm font-semibold hover:border-market-red hover:text-market-red">
+                        <Icon name="ph:user" size="18" />
+                        <span class="ui-span">Account</span>
+                        <Icon name="mdi:chevron-down" size="16" />
+                    </button>
+
+                    <div
+                        v-if="isAccountMenu"
+                        id="AccountMenu"
+                        class="absolute right-0 top-12 w-[230px] overflow-hidden rounded-lg border border-market-line bg-white text-sm shadow-market"
+                    >
+                        <div v-if="!user" class="p-3">
+                            <div class="mb-3 font-semibold text-market-ink">Welcome back</div>
+                            <NuxtLink
+                                to="/auth"
+                                class="block rounded-lg bg-market-red px-3 py-2 text-center font-semibold text-white hover:bg-[#D92F43]"
                             >
-                                <NuxtLink 
-                                    :to="`/item/${item.id}`" 
-                                    class="flex items-center justify-between w-full cursor-pointer hover:bg-gray-100"
-                                >
-                                    <div class="flex items-center">
-                                        <img class="rounded-md" width="40" :src="item.url">
-                                        <div class="truncate ml-2">{{ item.title }}</div>
-                                    </div>
-                                    <div class="truncate">${{ item.price / 100 }}</div>
-                                </NuxtLink>
-                            </div>
+                                Login / Register
+                            </NuxtLink>
+                        </div>
+                        <div class="border-t border-market-line">
+                            <button class="ui-button flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-market-canvas" @click="goTo('/orders')">
+                                <Icon name="ph:package" size="18" />
+                                <span class="ui-span">My Orders</span>
+                            </button>
+                            <button v-if="user" class="ui-button flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-market-canvas" @click="signOut">
+                                <Icon name="ph:sign-out" size="18" />
+                                <span class="ui-span">Sign out</span>
+                            </button>
                         </div>
                     </div>
                 </div>
-                
-                <NuxtLink 
-                    to="/shoppingcart"
-                    class="flex items-center"
-                >
-                    <button 
-                        class="relative md:block hidden"
+
+                <NuxtLink to="/shoppingcart" class="hidden md:block" aria-label="Open cart">
+                    <button
+                        class="ui-button relative flex h-11 items-center gap-2 rounded-lg border border-market-line px-3 text-sm font-semibold hover:border-market-red hover:text-market-red"
                         @mouseenter="isCartHover = true"
                         @mouseleave="isCartHover = false"
                     >
-                        <span 
-                            class="
-                                absolute 
-                                flex 
-                                items-center 
-                                justify-center 
-                                -right-[3px] 
-                                top-0 
-                                bg-[#FF4646] 
-                                h-[17px] 
-                                min-w-[17px] 
-                                text-xs 
-                                text-white
-                                px-0.5 
-                                rounded-full
-                            "
-                        >
+                        <Icon name="ph:shopping-cart-simple" size="22" :class="isCartHover ? 'text-market-red' : ''" />
+                        <span class="ui-span">Cart</span>
+                        <span class="ui-span absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-market-red px-1 text-xs font-bold text-white">
                             {{ userStore.cart.length }}
                         </span>
-                        <div class="min-w-[40px]">
-                            <Icon 
-                                name="ph:shopping-cart-simple-light" 
-                                size="33" 
-                                :color="isCartHover ? '#FF4646' : ''"
-                            />
-                        </div>
                     </button>
                 </NuxtLink>
 
-                <button 
+                <button
                     @click="userStore.isMenuOverlay = true"
-                    class="md:hidden block rounded-full p-1.5 -mt-[4px] hover:bg-gray-200"
+                    class="ui-button rounded-lg p-2 hover:bg-market-canvas md:hidden"
+                    aria-label="Open menu"
                 >
-                    <Icon name="radix-icons:hamburger-menu" size="33" />
+                    <Icon name="radix-icons:hamburger-menu" size="30" />
                 </button>
             </div>
+        </header>
+
+        <div class="mx-auto hidden max-w-[1200px] items-center gap-2 px-3 pb-3 text-sm text-market-muted md:flex">
+            <span class="ui-span font-semibold text-market-ink">Today deals</span>
+            <span class="ui-span text-market-line">|</span>
+            <span class="ui-span">Free shipping</span>
+            <span class="ui-span">Top rated</span>
+            <span class="ui-span">New arrivals</span>
+            <span class="ui-span">Secure checkout</span>
         </div>
     </div>
 
     <Loading v-if="userStore.isLoading" />
 
-    <div class="lg:pt-[150px] md:pt-[130px] pt-[80px]" />
+    <div class="pt-[84px] md:pt-[148px]" />
     <slot />
 
     <Footer v-if="!userStore.isLoading"/>
-
 </template>
 
 <script setup>
 import { useUserStore } from '~/stores/user';
-const userStore = useUserStore()
 
+const userStore = useUserStore()
 const client = useSupabaseClient()
 const user = useSupabaseUser()
 
-let isAccountMenu = ref(false)
-let isCartHover = ref(false)
-let isSearching = ref(false)
-let searchItem = ref('')
-let items = ref(null)
+const isAccountMenu = ref(false)
+const isCartHover = ref(false)
+const isSearching = ref(false)
+const searchItem = ref('')
+const searchResults = ref([])
+
+const formatPrice = (value) => (Number(value || 0) / 100).toFixed(2)
+
+const clearSearch = () => {
+    searchItem.value = ''
+    searchResults.value = []
+}
 
 const searchByName = useDebounce(async () => {
-    isSearching.value = true
-    items.value = await useFetch(`/api/prisma/search-by-name/${searchItem.value}`)
-    isSearching.value = false
-}, 100)
+    const query = searchItem.value.trim()
 
-watch(() => searchItem.value, async () => {
-    if (!searchItem.value) { 
-        setTimeout(() => {
-            items.value = ''
-            isSearching.value = false
-            return
-        }, 500)
+    if (!query) {
+        searchResults.value = []
+        isSearching.value = false
+        return
     }
-    searchByName() 
+
+    isSearching.value = true
+    searchResults.value = await $fetch(`/api/prisma/search-by-name/${encodeURIComponent(query)}`)
+    isSearching.value = false
+}, 180)
+
+const goTo = (path) => {
+    isAccountMenu.value = false
+    return navigateTo(path)
+}
+
+const signOut = async () => {
+    await client.auth.signOut()
+    isAccountMenu.value = false
+    return navigateTo('/')
+}
+
+watch(() => searchItem.value, () => {
+    searchByName()
 })
 </script>

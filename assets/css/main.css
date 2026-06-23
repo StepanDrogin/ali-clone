@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-market-canvas text-market-ink antialiased;
+  }
+}
+
+@layer components {
+  .ui-button {
+    @apply transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-orange disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .ui-span {
+    @apply leading-normal;
+  }
+
+  .ui-title {
+    @apply font-semibold tracking-normal text-market-ink;
+  }
+
+  .ui-panel {
+    @apply rounded-lg border border-market-line bg-market-surface shadow-market-soft;
+  }
+
+  .ui-page {
+    @apply mx-auto w-full max-w-[1200px] px-3;
+  }
+}

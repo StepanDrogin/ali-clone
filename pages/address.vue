@@ -1,13 +1,10 @@
 <template>
     <MainLayout>
-        <div 
-            id="AddressPage" 
-            class="mt-4 max-w-[500px] mx-auto px-2"
-        >
-            <div class="mx-auto bg-white rounded-lg p-3">
-                <div class="text-xl text-bold mb-2">Address Details</div>
+        <main id="AddressPage" class="mx-auto mt-4 w-full max-w-[520px] px-3">
+            <div class="ui-panel p-4">
+                <h1 class="ui-title mb-3 text-xl">Address Details</h1>
                 <form @submit.prevent="submit()">
-                    <TextInput 
+                    <TextInput
                         class="w-full"
                         placeholder="Contact Name"
                         v-model:input="contactName"
@@ -15,169 +12,144 @@
                         :error="error && error.type == 'contactName' ? error.message : ''"
                     />
 
-                    <TextInput 
-                        class="w-full mt-2"
+                    <TextInput
+                        class="mt-2 w-full"
                         placeholder="Address"
                         v-model:input="address"
                         inputType="text"
                         :error="error && error.type == 'address' ? error.message : ''"
                     />
 
-                    <TextInput 
-                        class="w-full mt-2"
+                    <TextInput
+                        class="mt-2 w-full"
                         placeholder="Zip Code"
                         v-model:input="zipCode"
                         inputType="text"
                         :error="error && error.type == 'zipCode' ? error.message : ''"
                     />
 
-                    <TextInput 
-                        class="w-full mt-2"
+                    <TextInput
+                        class="mt-2 w-full"
                         placeholder="City"
                         v-model:input="city"
                         inputType="text"
                         :error="error && error.type == 'city' ? error.message : ''"
                     />
 
-                    <TextInput 
-                        class="w-full mt-2"
+                    <TextInput
+                        class="mt-2 w-full"
                         placeholder="Country"
                         v-model:input="country"
                         inputType="text"
                         :error="error && error.type == 'country' ? error.message : ''"
                     />
 
-                    <button 
+                    <button
                         :disabled="isWorking"
                         type="submit"
-                        class="
-                            mt-6
-                            bg-gradient-to-r 
-                            from-[#FE630C] 
-                            to-[#FF3200]
-                            w-full 
-                            text-white 
-                            text-[21px] 
-                            font-semibold 
-                            p-1.5 
-                            rounded-full
-                        "
+                        class="ui-button mt-6 flex w-full items-center justify-center rounded-full bg-gradient-to-r from-market-orange to-market-red p-2 text-[20px] font-semibold text-white"
                     >
-                        <div v-if="!isWorking">Update Address</div>
-                        <Icon 
+                        <span v-if="!isWorking" class="ui-span">Update Address</span>
+                        <Icon
                             v-else
-                            name="eos-icons:loading" 
-                            size="25" 
+                            name="eos-icons:loading"
+                            size="25"
                             class="mr-2"
                         />
                     </button>
                 </form>
             </div>
-        </div>
+        </main>
     </MainLayout>
 </template>
 
 <script setup>
 import MainLayout from '~/layouts/MainLayout.vue';
 import { useUserStore } from '~/stores/user';
-const userStore = useUserStore()
-const user = useSupabaseUser()
 
-let contactName = ref(null)
-let address = ref(null)
-let zipCode = ref(null)
-let city = ref(null)
-let country = ref(null)
+definePageMeta({ middleware: "auth" })
+
+const userStore = useUserStore()
+const userId = useCurrentUserId()
+
+let contactName = ref('')
+let address = ref('')
+let zipCode = ref('')
+let city = ref('')
+let country = ref('')
 
 let currentAddress = ref(null)
 let isUpdate = ref(false)
 let isWorking = ref(false)
 let error = ref(null)
 
-watchEffect(async () => {
-    currentAddress.value = await useFetch(`/api/prisma/get-address-by-user/${user.value.id}`)
+onMounted(async () => {
+    if (!userId.value) {
+        return navigateTo('/auth')
+    }
 
-    if (currentAddress.value.data) {
-        contactName.value = currentAddress.value.data.name
-        address.value = currentAddress.value.data.address
-        zipCode.value = currentAddress.value.data.zipcode
-        city.value = currentAddress.value.data.city
-        country.value = currentAddress.value.data.country
+    currentAddress.value = await $fetch(`/api/prisma/get-address-by-user/${userId.value}`)
 
+    if (currentAddress.value) {
+        contactName.value = currentAddress.value.name
+        address.value = currentAddress.value.address
+        zipCode.value = currentAddress.value.zipcode
+        city.value = currentAddress.value.city
+        country.value = currentAddress.value.country
         isUpdate.value = true
     }
 
     userStore.isLoading = false
 })
 
-const submit = async () => {
-    isWorking.value = true
+const validate = () => {
     error.value = null
 
     if (!contactName.value) {
-        error.value = {
-            type: 'contactName',
-            message: 'A contact name is required'
-        }
+        error.value = { type: 'contactName', message: 'A contact name is required' }
     } else if (!address.value) {
-        error.value = {
-            type: 'address',
-            message: 'An address is required'
-        }
+        error.value = { type: 'address', message: 'An address is required' }
     } else if (!zipCode.value) {
-        error.value = {
-            type: 'zipCode',
-            message: 'A zip code is required'
-        }
+        error.value = { type: 'zipCode', message: 'A zip code is required' }
     } else if (!city.value) {
-        error.value = {
-            type: 'city',
-            message: 'A city is required'
-        }
+        error.value = { type: 'city', message: 'A city is required' }
     } else if (!country.value) {
-        error.value = {
-            type: 'country',
-            message: 'A country is required'
-        }
+        error.value = { type: 'country', message: 'A country is required' }
     }
 
-    if (error.value) {
+    return !error.value
+}
+
+const submit = async () => {
+    isWorking.value = true
+
+    if (!validate()) {
         isWorking.value = false
         return
     }
 
-    if (isUpdate.value) {
-        await useFetch(`/api/prisma/update-address/${currentAddress.value.data.id}`, {
-            method: 'PATCH',
-            body: {
-                userId: user.value.id,
-                name: contactName.value,
-                address: address.value,
-                zipCode: zipCode.value,
-                city: city.value,
-                country: country.value,
-            }
-        })
-
-        isWorking.value = false
-
-        return navigateTo('/checkout')
+    const payload = {
+        userId: userId.value,
+        name: contactName.value,
+        address: address.value,
+        zipCode: zipCode.value,
+        city: city.value,
+        country: country.value,
     }
-    
-    await useFetch(`/api/prisma/add-address/`, {
-        method: 'POST',
-        body: {
-            userId: user.value.id,
-            name: contactName.value,
-            address: address.value,
-            zipCode: zipCode.value,
-            city: city.value,
-            country: country.value,
-        }
-    })
+
+    if (isUpdate.value) {
+        await $fetch(`/api/prisma/update-address/${currentAddress.value.id}`, {
+            method: 'PATCH',
+            body: payload
+        })
+    } else {
+        await $fetch('/api/prisma/add-address/', {
+            method: 'POST',
+            body: payload
+        })
+    }
 
     isWorking.value = false
-
     return navigateTo('/checkout')
 }
 </script>
