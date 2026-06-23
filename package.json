@@ -4,6 +4,7 @@
   "scripts": {
     "build": "nuxt build",
     "build:netlify": "node scripts/build-netlify.mjs",
+    "ci:check": "npm run build:netlify && npm audit --audit-level=moderate",
     "db:generate": "prisma generate",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",

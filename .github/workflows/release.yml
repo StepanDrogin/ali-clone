@@ -1,0 +1,138 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semver version to release, for example 1.1.0 or v1.1.0'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark the GitHub Release as a prerelease'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '22'
+  DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/market_express?schema=public'
+  NUXT_PUBLIC_SITE_URL: 'https://market-express-ali-clone.netlify.app'
+  NUXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co'
+  NUXT_PUBLIC_SUPABASE_KEY: 'ci-placeholder'
+  STRIPE_PK_KEY: 'pk_test_ci_placeholder'
+  STRIPE_SK_KEY: 'sk_test_ci_placeholder'
+
+jobs:
+  release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate production env contract
+        run: npm run validate:production-env
+        env:
+          REQUIRE_PRODUCTION_ENV: 'true'
+
+      - name: Build and audit
+        run: npm run ci:check
+
+      - name: Resolve release tag
+        id: release_tag
+        shell: bash
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            raw_version="${{ inputs.version }}"
+            clean_version="${raw_version#v}"
+            tag="v${clean_version}"
+
+            if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+              echo "::error title=Invalid version::Use semver, for example 1.1.0 or v1.1.0."
+              exit 1
+            fi
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              echo "Using existing tag $tag"
+            else
+              git tag -a "$tag" -m "Release $tag"
+              git push origin "$tag"
+            fi
+          else
+            tag="$GITHUB_REF_NAME"
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release_tag.outputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          notes_path="docs/releases/${TAG}.md"
+          args=(--title "Market Express ${TAG}")
+
+          if [ -f "$notes_path" ]; then
+            args+=(--notes-file "$notes_path")
+          else
+            args+=(--generate-notes)
+          fi
+
+          if [ "$PRERELEASE" = "true" ]; then
+            args+=(--prerelease)
+          else
+            args+=(--latest)
+          fi
+
+          gh release create "$TAG" "${args[@]}"
+          release_url="$(gh release view "$TAG" --json url --jq '.url')"
+          echo "release_url=$release_url" >> "$GITHUB_ENV"
+
+      - name: Trigger Netlify release deploy
+        env:
+          NETLIFY_BUILD_HOOK: ${{ secrets.NETLIFY_BUILD_HOOK }}
+        run: |
+          if [ -z "$NETLIFY_BUILD_HOOK" ]; then
+            echo "::warning title=Skipped Netlify deploy::NETLIFY_BUILD_HOOK is not configured."
+            exit 0
+          fi
+
+          curl -fsS -X POST "$NETLIFY_BUILD_HOOK"
+
+      - name: Write release summary
+        run: |
+          {
+            echo '### Release published'
+            echo ''
+            echo "- Tag: ${{ steps.release_tag.outputs.tag }}"
+            echo "- GitHub Release: ${release_url}"
+            echo "- Production: https://market-express-ali-clone.netlify.app"
+          } >> "$GITHUB_STEP_SUMMARY"
