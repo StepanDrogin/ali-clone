@@ -1,4 +1,6 @@
 import { spawnSync } from 'node:child_process'
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 
 const run = (command) => {
   const result = spawnSync(command, {
@@ -18,3 +20,23 @@ run('node scripts/patch-tslib-for-netlify.mjs')
 run('npm run validate:production-env')
 run('npx prisma generate')
 run('npx nuxt build')
+
+const prismaClientOutput = '.netlify/functions-internal/server/node_modules/.prisma/client'
+const prismaPackageOutput = '.netlify/functions-internal/server/node_modules/@prisma/client'
+const prismaFiles = [
+  'libquery_engine-rhel-openssl-3.0.x.so.node',
+  'schema.prisma'
+]
+
+for (const file of prismaFiles) {
+  const source = join(prismaClientOutput, file)
+  const target = join(prismaPackageOutput, file)
+
+  if (!existsSync(source)) {
+    console.error(`Missing generated Prisma artifact: ${source}`)
+    process.exit(1)
+  }
+
+  mkdirSync(dirname(target), { recursive: true })
+  copyFileSync(source, target)
+}

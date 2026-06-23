@@ -16,7 +16,9 @@
   external_node_modules = ["@prisma/client", ".prisma"]
   included_files = [
     ".netlify/functions-internal/server/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node",
-    ".netlify/functions-internal/server/node_modules/.prisma/client/schema.prisma"
+    ".netlify/functions-internal/server/node_modules/.prisma/client/schema.prisma",
+    ".netlify/functions-internal/server/node_modules/@prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node",
+    ".netlify/functions-internal/server/node_modules/@prisma/client/schema.prisma"
   ]
 
 [[headers]]
