@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy:
-        description: 'Trigger the Netlify production build hook after CI passes'
+        description: 'Verify Netlify production after CI passes'
         required: false
         default: false
         type: boolean
@@ -26,7 +26,7 @@ concurrency:
 env:
   NODE_VERSION: '22'
   DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/market_express?schema=public'
-  NUXT_PUBLIC_SITE_URL: 'https://market-express-ali-clone.netlify.app'
+  NUXT_PUBLIC_SITE_URL: 'https://aliclone-drogin.netlify.app'
   NUXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co'
   NUXT_PUBLIC_SUPABASE_KEY: 'ci-placeholder'
   STRIPE_PK_KEY: 'pk_test_ci_placeholder'
@@ -83,35 +83,53 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
-    name: Production Deploy
+    name: Production Verify
     needs: quality
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_dispatch' && inputs.deploy)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     environment:
       name: production
-      url: https://market-express-ali-clone.netlify.app
+      url: https://aliclone-drogin.netlify.app
 
     steps:
-      - name: Trigger Netlify production build
-        env:
-          NETLIFY_BUILD_HOOK: ${{ secrets.NETLIFY_BUILD_HOOK }}
+      - name: Verify production endpoints
+        shell: bash
         run: |
-          if [ -z "$NETLIFY_BUILD_HOOK" ]; then
-            echo "::error title=Missing NETLIFY_BUILD_HOOK::Add the Netlify build hook URL as a GitHub repository secret."
-            exit 1
-          fi
+          endpoints=(
+            "https://aliclone-drogin.netlify.app/"
+            "https://aliclone-drogin.netlify.app/api/health"
+            "https://aliclone-drogin.netlify.app/api/prisma/get-all-products"
+          )
 
-          curl -fsS -X POST "$NETLIFY_BUILD_HOOK"
+          for attempt in {1..30}; do
+            failed=0
+
+            for endpoint in "${endpoints[@]}"; do
+              if ! curl -fsS --max-time 20 "$endpoint" >/dev/null; then
+                failed=1
+                break
+              fi
+            done
+
+            if [ "$failed" -eq 0 ]; then
+              exit 0
+            fi
+
+            sleep 10
+          done
+
+          echo "::error title=Production verification failed::Netlify production endpoints did not become healthy in time."
+          exit 1
 
       - name: Write deploy summary
         run: |
           {
-            echo '### Production deploy'
+            echo '### Production verification'
             echo ''
-            echo '- Netlify build hook triggered'
-            echo '- Site: https://market-express-ali-clone.netlify.app'
-            echo '- Health: https://market-express-ali-clone.netlify.app/api/health'
+            echo '- Site: https://aliclone-drogin.netlify.app'
+            echo '- Health: https://aliclone-drogin.netlify.app/api/health'
+            echo '- Products API: https://aliclone-drogin.netlify.app/api/prisma/get-all-products'
           } >> "$GITHUB_STEP_SUMMARY"

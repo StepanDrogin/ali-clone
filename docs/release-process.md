@@ -1,6 +1,6 @@
 # Release Process
 
-Market Express uses semver tags and GitHub Releases. The release workflow builds the app, runs the audit gate, creates a GitHub Release and triggers the Netlify production build hook.
+Market Express uses semver tags and GitHub Releases. The release workflow builds the app, runs the audit gate, creates a GitHub Release and verifies the Netlify production app.
 
 ## Before a Release
 

@@ -2,11 +2,11 @@
 
 [![CI / CD](https://github.com/StepanDrogin/ali-clone/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/StepanDrogin/ali-clone/actions/workflows/ci-cd.yml)
 [![Release](https://github.com/StepanDrogin/ali-clone/actions/workflows/release.yml/badge.svg)](https://github.com/StepanDrogin/ali-clone/actions/workflows/release.yml)
-[![Netlify Status](https://api.netlify.com/api/v1/badges/d947202d-1c71-4be4-8747-c8c9a671b924/deploy-status)](https://app.netlify.com/projects/market-express-ali-clone/deploys)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/bb6ca49e-8fd7-4bb6-93d7-12cce6c08d25/deploy-status)](https://app.netlify.com/projects/aliclone-drogin/deploys)
 
 Portfolio-ready full stack marketplace demo built with Nuxt 3, Supabase Auth, Prisma/PostgreSQL, Pinia and Stripe PaymentIntents.
 
-[Live production](https://market-express-ali-clone.netlify.app) · [Production runbook](docs/production.md) · [Release process](docs/release-process.md)
+[Live production](https://aliclone-drogin.netlify.app) | [Production runbook](docs/production.md) | [Release process](docs/release-process.md)
 
 ![Market Express desktop screenshot](docs/screenshots/home-desktop.png)
 
@@ -31,7 +31,7 @@ flowchart LR
   Prisma --> Supabase[(Supabase Postgres)]
   Nuxt --> SupabaseAuth[Supabase Auth]
   Nitro --> Stripe[Stripe PaymentIntents]
-  GitHub[GitHub Actions] --> Netlify[Netlify build hook]
+  GitHub[GitHub Actions] --> Netlify[Netlify Git deploy]
   Netlify --> Nuxt
 ```
 
@@ -41,9 +41,9 @@ flowchart LR
 - Tailwind CSS module with project tokens in `tailwind.config.ts`.
 - Shared UI classes: `ui-button`, `ui-span`, `ui-title`.
 - Supabase Nuxt module for OAuth and session state.
-- Prisma `4.16` with Netlify-compatible `rhel-openssl-3.0.x` binary target.
+- Prisma `5.22` with Netlify-compatible `rhel-openssl-3.0.x` binary target.
 - Stripe Node SDK and Stripe.js for test-mode checkout.
-- GitHub Actions for CI, production deploy triggers and GitHub Releases.
+- GitHub Actions for CI, production verification and GitHub Releases.
 
 ## Screenshots
 
@@ -84,16 +84,10 @@ The repository ships with GitHub Actions workflows:
 | Workflow | Trigger | Purpose |
 | --- | --- | --- |
 | `CI / CD` | pull request, push to `main`, push to `s.drogin/**`, manual dispatch | install, validate env contract, build Netlify/Nitro bundle, audit dependencies |
-| `CI / CD` deploy job | push to `main` or manual dispatch with `deploy=true` | trigger the Netlify production build hook after CI passes |
-| `Release` | tag `v*.*.*` or manual dispatch | build, audit, create GitHub Release, trigger Netlify deploy |
+| `CI / CD` production job | push to `main` or manual dispatch with `deploy=true` | verify the Netlify production app after CI passes |
+| `Release` | tag `v*.*.*` or manual dispatch | build, audit, create GitHub Release, verify production |
 
-Only one GitHub repository secret is required for automated deployment:
-
-```text
-NETLIFY_BUILD_HOOK
-```
-
-Create it in Netlify for the `main` branch, then add the URL in GitHub repository secrets. Production app secrets stay in Netlify, so GitHub Actions does not need `DATABASE_URL`, Stripe keys or Supabase keys.
+Production deploys are handled by the Netlify Git integration for `main`, so no GitHub deployment secret is required. Production app secrets stay in Netlify, and GitHub Actions uses safe CI placeholders only for build-time validation.
 
 ## Commands
 
@@ -106,9 +100,10 @@ npm audit --audit-level=moderate
 
 Operational endpoints:
 
-- [Health](https://market-express-ali-clone.netlify.app/api/health)
-- [Robots](https://market-express-ali-clone.netlify.app/robots.txt)
-- [Sitemap](https://market-express-ali-clone.netlify.app/sitemap.xml)
+- [Health](https://aliclone-drogin.netlify.app/api/health)
+- [Products API](https://aliclone-drogin.netlify.app/api/prisma/get-all-products)
+- [Robots](https://aliclone-drogin.netlify.app/robots.txt)
+- [Sitemap](https://aliclone-drogin.netlify.app/sitemap.xml)
 
 ## Releases
 

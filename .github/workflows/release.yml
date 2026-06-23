@@ -26,7 +26,7 @@ concurrency:
 env:
   NODE_VERSION: '22'
   DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/market_express?schema=public'
-  NUXT_PUBLIC_SITE_URL: 'https://market-express-ali-clone.netlify.app'
+  NUXT_PUBLIC_SITE_URL: 'https://aliclone-drogin.netlify.app'
   NUXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co'
   NUXT_PUBLIC_SUPABASE_KEY: 'ci-placeholder'
   STRIPE_PK_KEY: 'pk_test_ci_placeholder'
@@ -116,16 +116,18 @@ jobs:
           release_url="$(gh release view "$TAG" --json url --jq '.url')"
           echo "release_url=$release_url" >> "$GITHUB_ENV"
 
-      - name: Trigger Netlify release deploy
-        env:
-          NETLIFY_BUILD_HOOK: ${{ secrets.NETLIFY_BUILD_HOOK }}
+      - name: Verify production endpoints
+        shell: bash
         run: |
-          if [ -z "$NETLIFY_BUILD_HOOK" ]; then
-            echo "::warning title=Skipped Netlify deploy::NETLIFY_BUILD_HOOK is not configured."
-            exit 0
-          fi
+          endpoints=(
+            "https://aliclone-drogin.netlify.app/"
+            "https://aliclone-drogin.netlify.app/api/health"
+            "https://aliclone-drogin.netlify.app/api/prisma/get-all-products"
+          )
 
-          curl -fsS -X POST "$NETLIFY_BUILD_HOOK"
+          for endpoint in "${endpoints[@]}"; do
+            curl -fsS --max-time 20 "$endpoint" >/dev/null
+          done
 
       - name: Write release summary
         run: |
@@ -134,5 +136,5 @@ jobs:
             echo ''
             echo "- Tag: ${{ steps.release_tag.outputs.tag }}"
             echo "- GitHub Release: ${release_url}"
-            echo "- Production: https://market-express-ali-clone.netlify.app"
+            echo "- Production: https://aliclone-drogin.netlify.app"
           } >> "$GITHUB_STEP_SUMMARY"

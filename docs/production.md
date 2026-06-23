@@ -18,14 +18,14 @@ AWS_LAMBDA_JS_RUNTIME=nodejs22.x
 
 Do not commit real values to the repository. GitHub Actions should not store the app database URL or Stripe secret key; Netlify owns production app secrets.
 
-## GitHub Secret
+## Netlify Git Deploy
 
-Automated deploys use a Netlify build hook instead of duplicating production secrets in GitHub.
+Automated production deploys use the Netlify Git integration on the `main` branch. GitHub Actions builds and audits the app with safe placeholders, while Netlify owns the real production app secrets.
 
-1. Open Netlify project settings.
-2. Go to Build & deploy, then Build hooks.
-3. Create a hook for branch `main`.
-4. Add the hook URL as a GitHub repository secret named `NETLIFY_BUILD_HOOK`.
+1. Open the `aliclone-drogin` site in Netlify.
+2. Confirm the Git provider is connected to `StepanDrogin/ali-clone`.
+3. Confirm the production branch is `main`.
+4. Keep production values in Netlify environment variables.
 
 ## Database Release
 
@@ -69,11 +69,10 @@ Remove-Item Env:\REQUIRE_PRODUCTION_ENV
 flowchart LR
   PR[Pull Request] --> CI[GitHub Actions CI]
   Main[Push to main] --> CI
-  CI --> Hook[Netlify build hook]
-  Hook --> Build[Netlify production build]
+  CI --> Build[Netlify Git production build]
   Build --> Site[Production site]
   Tag[Tag vX.Y.Z] --> Release[GitHub Release]
-  Release --> Hook
+  Release --> Site
 ```
 
 Manual deploy fallback:
@@ -90,11 +89,11 @@ npm run deploy:prod
 Check these URLs after every release:
 
 ```text
-https://market-express-ali-clone.netlify.app/
-https://market-express-ali-clone.netlify.app/api/health
-https://market-express-ali-clone.netlify.app/api/prisma/get-all-products
-https://market-express-ali-clone.netlify.app/robots.txt
-https://market-express-ali-clone.netlify.app/sitemap.xml
+https://aliclone-drogin.netlify.app/
+https://aliclone-drogin.netlify.app/api/health
+https://aliclone-drogin.netlify.app/api/prisma/get-all-products
+https://aliclone-drogin.netlify.app/robots.txt
+https://aliclone-drogin.netlify.app/sitemap.xml
 ```
 
 For checkout smoke tests, create a small Stripe test PaymentIntent through the app flow and avoid logging `client_secret`.
