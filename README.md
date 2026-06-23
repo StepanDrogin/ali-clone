@@ -37,7 +37,7 @@ Design reference: [docs/screenshots/concept-marketplace.png](docs/screenshots/co
 npm install
 cp .env.example .env
 npx prisma generate
-npx prisma migrate deploy
+npm run db:migrate:deploy
 npm run db:seed
 npm run dev
 ```
@@ -49,11 +49,21 @@ For local UI-only preview without real Supabase credentials, the app uses safe p
 ## Production
 
 ```bash
-npm run build
+npm run prod:check
+npm run db:migrate:deploy
+npm run build:netlify
 npm run start
 ```
 
-Deploy as a Nuxt/Nitro Node server. Configure the same environment variables in the hosting provider before running migrations and seed.
+Deploy to Netlify as a Nuxt/Nitro server app. Configure the same environment variables in Netlify before running migrations and production deploys. Production builds validate required environment variables automatically when `CONTEXT=production`.
+
+Operational endpoints:
+
+- `/api/health`
+- `/robots.txt`
+- `/sitemap.xml`
+
+See [docs/production.md](docs/production.md) for the deploy checklist.
 
 ## Releases
 
