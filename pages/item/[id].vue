@@ -1,138 +1,127 @@
 <template>
     <MainLayout>
-        <div id="ItemPage" class="mt-4 max-w-[1200px] mx-auto px-2">
-            <div class="md:flex gap-4 justify-between mx-auto w-full">
-                <div class="md:w-[40%]">
-                    <img 
+        <main id="ItemPage" class="ui-page mt-4">
+            <div v-if="error" class="ui-panel p-6 text-sm text-market-muted">
+                Product is unavailable or was not found.
+            </div>
+
+            <div v-else-if="product" class="grid gap-4 md:grid-cols-[0.85fr_1.15fr]">
+                <section class="ui-panel p-3">
+                    <img
                         v-if="currentImage"
-                        class="rounded-lg object-fit"
+                        class="aspect-[4/3] w-full rounded-lg object-cover"
                         :src="currentImage"
+                        :alt="product.title"
                     >
-                    <div v-if="images[0] !== ''" class="flex items-center justify-center mt-2">
-                        <div v-for="image in images">
-                            <img 
-                                @mouseover="currentImage = image"
-                                @click="currentImage = image"
-                                width="70"
-                                class="rounded-md object-fit border-[3px] cursor-pointer"
-                                :class="currentImage === image ? 'border-[#FF5353]' : ''"
-                                :src="image"
-                            >
-                        </div>
+                    <div class="mt-3 grid grid-cols-5 gap-2">
+                        <button
+                            v-for="image in images"
+                            :key="image"
+                            @mouseover="currentImage = image"
+                            @click="currentImage = image"
+                            class="ui-button overflow-hidden rounded-lg border-2"
+                            :class="currentImage === image ? 'border-market-red' : 'border-transparent hover:border-market-line'"
+                            :aria-label="`Preview ${product.title}`"
+                        >
+                            <img class="aspect-square w-full object-cover" :src="image" :alt="product.title">
+                        </button>
                     </div>
-                </div>
-                <div class="md:w-[60%] bg-white p-3 rounded-lg">
-                    <div v-if="product && product.data">
-                        <p class="mb-2">{{ product.data.title }}</p>
-                        <p class="font-light text-[12px] mb-2">{{ product.data.description }}</p>
-                    </div>
+                </section>
 
-                    <div class="flex items-center pt-1.5">
-                        <span class="h-4 min-w-4 rounded-full p-0.5 bg-[#FFD000] mr-2">
-                            <Icon name="material-symbols:star-rounded" class="-mt-[17px]" size="12"/>
+                <section class="ui-panel p-4 md:p-5">
+                    <h1 class="ui-title text-2xl md:text-3xl">{{ product.title }}</h1>
+                    <p class="mt-3 text-sm leading-6 text-market-muted">{{ product.description }}</p>
+
+                    <div class="mt-4 flex flex-wrap items-center gap-2">
+                        <span class="ui-span flex items-center gap-1 rounded-full bg-[#FFF5CC] px-3 py-1 text-sm font-semibold text-[#8A5B00]">
+                            <Icon name="material-symbols:star-rounded" size="16"/>
+                            Top rated
                         </span>
-                        <p class="text-[#FF5353]">Extra 5% off</p>
+                        <span class="ui-span rounded-full bg-[#FFF0F2] px-3 py-1 text-sm font-semibold text-market-red">Extra 5% off</span>
                     </div>
 
-                    <div class="flex items-center justify-start my-2">
-                        <Icon name="ic:baseline-star" color="#FF5353"/>
-                        <Icon name="ic:baseline-star" color="#FF5353"/>
-                        <Icon name="ic:baseline-star" color="#FF5353"/>
-                        <Icon name="ic:baseline-star" color="#FF5353"/>
-                        <Icon name="ic:baseline-star" color="#FF5353"/>
-                        <span class="text-[13px] font-light ml-2">5 213 Reviews 1,000+ orders</span>
+                    <div class="mt-4 flex items-center gap-1">
+                        <Icon v-for="star in 5" :key="star" name="ic:baseline-star" class="text-market-red"/>
+                        <span class="ui-span ml-2 text-[13px] font-light text-market-muted">5,213 reviews · 1,000+ orders</span>
                     </div>
 
-                    <div class="border-b" />
+                    <div class="my-5 border-b border-market-line" />
 
-                    <div class="flex items-center justify-start gap-2 my-2">
-                        <div class="text-xl font-bold">$ {{ priceComputed }}</div>
-                        <span class="bg-[#F5F5F5] border text-[#C08562] text-[9px] font-semibold px-1.5 rounded-sm">70% off</span>
+                    <div class="flex items-center gap-3">
+                        <div class="text-3xl font-extrabold">$ {{ priceComputed }}</div>
+                        <span class="ui-span rounded border border-[#E7D0BD] bg-[#FFF8F2] px-2 py-1 text-xs font-bold uppercase text-[#A15F2B]">20% off</span>
                     </div>
 
-                    <p class="text-[#009A66] text-xs font-semibold pt-1">
-                        Free 11-day delivery over ￡8.28
-                    </p>
+                    <div class="mt-4 grid gap-2 text-sm text-market-green sm:grid-cols-2">
+                        <p class="rounded-lg bg-[#ECFDF5] p-3 font-semibold">Free 11-day delivery</p>
+                        <p class="rounded-lg bg-[#ECFDF5] p-3 font-semibold">Free shipping</p>
+                    </div>
 
-                    <p class="text-[#009A66] text-xs font-semibold pt-1">
-                        Free Shipping
-                    </p>
-
-                    <div class="py-2"/>
-
-                    <button 
+                    <button
                         @click="addToCart()"
                         :disabled="isInCart"
-                        class="
-                            px-6 
-                            py-2 
-                            rounded-lg 
-                            text-white 
-                            text-lg 
-                            font-semibold 
-                            bg-gradient-to-r 
-                            from-[#FF851A] 
-                            to-[#FFAC2C]
-                        "
+                        class="ui-button mt-6 rounded-full bg-gradient-to-r from-market-orange to-market-red px-7 py-3 text-lg font-semibold text-white"
                     >
-                        <div v-if="isInCart">Is Added</div>
-                        <div v-else>Add to Cart</div>
+                        <span v-if="isInCart" class="ui-span">Added to cart</span>
+                        <span v-else class="ui-span">Add to Cart</span>
                     </button>
-                </div>
+                </section>
             </div>
-        </div>
+        </main>
     </MainLayout>
 </template>
 
 <script setup>
 import MainLayout from '~/layouts/MainLayout.vue';
 import { useUserStore } from '~/stores/user';
+
 const userStore = useUserStore()
-
 const route = useRoute()
+const currentImage = ref(null)
 
-let product = ref(null)
-let currentImage = ref(null)
+const { data: product, error } = await useFetch(`/api/prisma/get-product-by-id/${route.params.id}`)
 
-onBeforeMount(async () => {
-    product.value = await useFetch(`/api/prisma/get-product-by-id/${route.params.id}`)
+const images = computed(() => {
+    if (!product.value) {
+        return []
+    }
+
+    return [
+        product.value.url,
+        'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
+        'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=80',
+        'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=900&q=80',
+        'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=80',
+    ]
 })
 
 watchEffect(() => {
-    if (product.value && product.value.data) {
-        currentImage.value = product.value.data.url
-        images.value[0] = product.value.data.url
+    if (product.value) {
+        currentImage.value = product.value.url
         userStore.isLoading = false
     }
 })
 
+onMounted(() => {
+    userStore.isLoading = false
+})
+
 const isInCart = computed(() => {
-    let res = false
-    userStore.cart.forEach(prod => {
-        if (route.params.id == prod.id) {
-            res = true
-        }
-    })
-    return res
+    return userStore.cart.some((prod) => Number(route.params.id) === prod.id)
 })
 
 const priceComputed = computed(() => {
-    if (product.value && product.value.data) {
-        return product.value.data.price / 100
+    if (product.value) {
+        return (product.value.price / 100).toFixed(2)
     }
     return '0.00'
 })
 
-const images = ref([
-    '',
-    'https://loremflickr.com/640/420?random=21',
-    'https://loremflickr.com/640/420?random=22',
-    'https://loremflickr.com/640/420?random=23',
-    'https://loremflickr.com/640/420?random=24',
-    'https://loremflickr.com/640/420?random=25',
-])
-
 const addToCart = () => {
-    userStore.cart.push(product.value.data)
+    if (!product.value || isInCart.value) {
+        return
+    }
+
+    userStore.cart.push(product.value)
 }
 </script>

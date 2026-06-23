@@ -1,14 +1,17 @@
 <template>
     <MainLayout>
-        <div id="SuccessPage" class="mt-4 max-w-[1200px] mx-auto px-2 min-h-[50vh]">
-            <div class="bg-white w-full p-6 min-h-[150px]">
+        <main id="SuccessPage" class="ui-page mt-4 min-h-[50vh]">
+            <section class="ui-panel p-6">
                 <div class="flex items-center text-xl">
-                    <Icon name="clarity:success-standard-line" color="#5FCB04" size="35"/>
-                    <span class="pl-4">Payment Successful</span>
+                    <Icon name="clarity:success-standard-line" class="text-market-green" size="35"/>
+                    <h1 class="ui-title pl-4 text-2xl">Payment Successful</h1>
                 </div>
-                <p class="text-sm pl-[50px]">Thank you! We've received your payment.</p>
-            </div>
-        </div>
+                <p class="pl-[52px] pt-2 text-sm text-market-muted">Thank you. Your payment was received and the order is now available in order history.</p>
+                <NuxtLink to="/orders" class="ml-[52px] mt-5 inline-flex rounded-full bg-market-red px-5 py-2 font-semibold text-white hover:bg-[#D92F43]">
+                    View orders
+                </NuxtLink>
+            </section>
+        </main>
     </MainLayout>
 </template>
 
@@ -18,6 +21,6 @@ import { useUserStore } from '~/stores/user';
 const userStore = useUserStore()
 
 onMounted(() => {
-    setTimeout(() => userStore.isLoading = false, 300)
+    userStore.isLoading = false
 })
 </script>

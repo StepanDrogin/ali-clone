@@ -1,0 +1,29 @@
+[build]
+  command = "npm run build:netlify"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NITRO_PRESET = "netlify"
+
+[dev]
+  command = "npm run dev"
+  targetPort = 3000
+  port = 8888
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["@prisma/client", ".prisma"]
+  included_files = [
+    ".netlify/functions-internal/server/node_modules/.prisma/client/**",
+    ".netlify/functions-internal/server/node_modules/@prisma/client/libquery_engine-*.so.node",
+    ".netlify/functions-internal/server/node_modules/@prisma/client/schema.prisma"
+  ]
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"

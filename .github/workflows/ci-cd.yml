@@ -1,0 +1,117 @@
+name: CI / CD
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - 's.drogin/**'
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Trigger the Netlify production build hook after CI passes'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/market_express?schema=public'
+  NUXT_PUBLIC_SITE_URL: 'https://market-express-ali-clone.netlify.app'
+  NUXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co'
+  NUXT_PUBLIC_SUPABASE_KEY: 'ci-placeholder'
+  STRIPE_PK_KEY: 'pk_test_ci_placeholder'
+  STRIPE_SK_KEY: 'sk_test_ci_placeholder'
+
+jobs:
+  quality:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate production env contract
+        run: npm run validate:production-env
+        env:
+          REQUIRE_PRODUCTION_ENV: 'true'
+
+      - name: Build and audit
+        run: npm run ci:check
+
+      - name: Verify Netlify runtime bundle
+        shell: bash
+        run: |
+          test -f ".netlify/functions-internal/server/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node"
+          node - <<'NODE'
+          const fs = require('node:fs')
+          const pkg = JSON.parse(fs.readFileSync('.netlify/functions-internal/server/node_modules/tslib/package.json', 'utf8'))
+          if (JSON.stringify(pkg.exports).includes('tslib.es6.mjs')) {
+            throw new Error('Netlify function bundle still references tslib.es6.mjs')
+          }
+          NODE
+
+      - name: Write summary
+        run: |
+          {
+            echo '### CI checks'
+            echo ''
+            echo '- Production env contract: passed with CI placeholders'
+            echo '- Netlify/Nitro build: passed'
+            echo '- Prisma Netlify runtime bundle: verified'
+            echo '- npm audit: moderate threshold'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Production Deploy
+    needs: quality
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && inputs.deploy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: production
+      url: https://market-express-ali-clone.netlify.app
+
+    steps:
+      - name: Trigger Netlify production build
+        env:
+          NETLIFY_BUILD_HOOK: ${{ secrets.NETLIFY_BUILD_HOOK }}
+        run: |
+          if [ -z "$NETLIFY_BUILD_HOOK" ]; then
+            echo "::error title=Missing NETLIFY_BUILD_HOOK::Add the Netlify build hook URL as a GitHub repository secret."
+            exit 1
+          fi
+
+          curl -fsS -X POST "$NETLIFY_BUILD_HOOK"
+
+      - name: Write deploy summary
+        run: |
+          {
+            echo '### Production deploy'
+            echo ''
+            echo '- Netlify build hook triggered'
+            echo '- Site: https://market-express-ali-clone.netlify.app'
+            echo '- Health: https://market-express-ali-clone.netlify.app/api/health'
+          } >> "$GITHUB_STEP_SUMMARY"

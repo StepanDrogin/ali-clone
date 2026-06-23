@@ -1,7 +1,8 @@
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient()
+import prisma from '~/server/utils/prisma'
 
 export default defineEventHandler(async (event) => {
-    let products = await prisma.products.findMany()
+    let products = await prisma.products.findMany({
+        orderBy: { id: 'asc' }
+    })
     return products
 })

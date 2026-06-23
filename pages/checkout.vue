@@ -1,270 +1,242 @@
 <template>
     <MainLayout>
-        <div id="CheckoutPage" class="mt-4 max-w-[1200px] mx-auto px-2">
-  
-            <div class="md:flex gap-4 justify-between mx-auto w-full">
-                <div class="md:w-[65%]">
-                    <div class="bg-white rounded-lg p-4">
+        <main id="CheckoutPage" class="ui-page mt-4">
+            <div class="grid gap-4 md:grid-cols-[1fr_380px]">
+                <section>
+                    <div class="ui-panel p-4">
+                        <h1 class="ui-title mb-3 text-xl">Shipping Address</h1>
 
-                        <div class="text-xl font-semibold mb-2">Shipping Address</div>
-
-                        <div v-if="currentAddress && currentAddress.data">
-                            <NuxtLink 
+                        <div v-if="currentAddress">
+                            <NuxtLink
                                 to="/address"
-                                class="flex items-center pb-2 text-blue-500 hover:text-red-400"
+                                class="mb-3 flex items-center pb-2 text-sm font-semibold text-blue-600 hover:text-market-red"
                             >
                                 <Icon name="mdi:plus" size="18" class="mr-2"/>
                                 Update Address
                             </NuxtLink>
 
-                            <div class="pt-2 border-t">
-                                <div class="underline pb-1">Delivery Address</div>
-                                <ul class="text-xs">
+                            <div class="border-t border-market-line pt-3">
+                                <div class="pb-2 text-sm font-semibold underline">Delivery Address</div>
+                                <ul class="space-y-1 text-sm text-market-muted">
                                     <li class="flex items-center gap-2">
-                                        <div>Contact name:</div> 
-                                        <div class="font-bold">{{ currentAddress.data.name }}</div>
+                                        <div>Contact name:</div>
+                                        <div class="font-bold text-market-ink">{{ currentAddress.name }}</div>
                                     </li>
                                     <li class="flex items-center gap-2">
-                                        <div>Address:</div> 
-                                        <div class="font-bold">{{ currentAddress.data.address }}</div>
+                                        <div>Address:</div>
+                                        <div class="font-bold text-market-ink">{{ currentAddress.address }}</div>
                                     </li>
                                     <li class="flex items-center gap-2">
-                                        <div>Zip Code:</div> 
-                                        <div class="font-bold">{{ currentAddress.data.zipcode }}</div>
+                                        <div>Zip Code:</div>
+                                        <div class="font-bold text-market-ink">{{ currentAddress.zipcode }}</div>
                                     </li>
                                     <li class="flex items-center gap-2">
-                                        <div>City:</div> 
-                                        <div class="font-bold">{{ currentAddress.data.city }}</div>
+                                        <div>City:</div>
+                                        <div class="font-bold text-market-ink">{{ currentAddress.city }}</div>
                                     </li>
                                     <li class="flex items-center gap-2">
-                                        <div>Country:</div> 
-                                        <div class="font-bold">{{ currentAddress.data.country }}</div>
+                                        <div>Country:</div>
+                                        <div class="font-bold text-market-ink">{{ currentAddress.country }}</div>
                                     </li>
                                 </ul>
                             </div>
                         </div>
 
-                        <NuxtLink 
+                        <NuxtLink
                             v-else
                             to="/address"
-                            class="flex items-center text-blue-500 hover:text-red-400"
+                            class="flex items-center text-sm font-semibold text-blue-600 hover:text-market-red"
                         >
                             <Icon name="mdi:plus" size="18" class="mr-2"/>
                             Add New Address
                         </NuxtLink>
                     </div>
 
-                    <div id="Items" class="bg-white rounded-lg p-4 mt-4">
-                        <div v-for="product in userStore.checkout">
-                            <CheckoutItem :product="product" />
-                        </div>
+                    <div id="Items" class="ui-panel mt-4 p-4">
+                        <CheckoutItem v-for="product in userStore.checkout" :key="product.id" :product="product" />
                     </div>
-                </div>
+                </section>
 
-                <div class="md:hidden block my-4"/>
-                <div class="md:w-[35%]">
-                    <div id="PlaceOrder" class="bg-white rounded-lg p-4">
+                <aside>
+                    <div id="PlaceOrder" class="ui-panel p-4">
+                        <h2 class="ui-title text-2xl">Summary</h2>
 
-                        <div class="text-2xl font-extrabold mb-2">Summary</div>
-
-                        <div class="flex items-center justify-between my-4">
-                            <div class="">Total Shipping</div>
-                            <div class="">Free</div>
+                        <div class="my-4 flex items-center justify-between text-sm">
+                            <div>Total Shipping</div>
+                            <div>Free</div>
                         </div>
 
-                        <div class="border-t" />
+                        <div class="border-t border-market-line" />
 
-                        <div class="flex items-center justify-between my-4">
+                        <div class="my-4 flex items-center justify-between">
                             <div class="font-semibold">Total</div>
                             <div class="text-2xl font-semibold">
-                                $ <span class="font-extrabold">{{ total / 100 }}</span>
+                                $ <span class="ui-span font-extrabold">{{ formatPrice(total) }}</span>
                             </div>
                         </div>
 
                         <form @submit.prevent="pay()">
-                            <div 
-                                class="border border-gray-500 p-2 rounded-sm" 
-                                id="card-element" 
+                            <div
+                                class="rounded-lg border border-market-line p-3"
+                                id="card-element"
                             />
 
-                            <p 
-                                id="card-error" 
-                                role="alert" 
-                                class="text-red-700 text-center font-semibold" 
-                            />
+                            <p
+                                id="card-error"
+                                role="alert"
+                                class="min-h-6 pt-2 text-center text-sm font-semibold text-red-700"
+                            >
+                                {{ paymentError }}
+                            </p>
 
-                            <button 
-                                :disabled="isProcessing"
+                            <button
+                                :disabled="isProcessing || !isCardComplete || !currentAddress"
                                 type="submit"
-                                class="
-                                mt-4
-                                    bg-gradient-to-r 
-                                  from-[#FE630C] 
-                                  to-[#FF3200]
-                                    w-full 
-                                    text-white 
-                                    text-[21px] 
-                                    font-semibold 
-                                    p-1.5 
-                                    rounded-full
-                                "
-                                :class="isProcessing ? 'opacity-70' : 'opacity-100'"
+                                class="ui-button mt-4 flex w-full items-center justify-center rounded-full bg-gradient-to-r from-market-orange to-market-red p-2 text-[20px] font-semibold text-white"
                             >
                                 <Icon v-if="isProcessing" name="eos-icons:loading" />
-                                <div v-else>Place order</div>
+                                <span v-else class="ui-span">Place order</span>
                             </button>
                         </form>
-
                     </div>
 
-                    <div class="bg-white rounded-lg p-4 mt-4">
-                        <div class="text-lg font-semibold mb-2 mt-2">AliExpress</div>
-                        <p class="my-2">
-                            AliExpress keeps your information and payment safe
+                    <div class="ui-panel mt-4 p-4">
+                        <h2 class="ui-title mb-2 mt-2 text-lg">Secure checkout</h2>
+                        <p class="my-2 text-sm text-market-muted">
+                            Payment is handled by Stripe. Address and order history are stored through the app API.
                         </p>
-
                     </div>
-                </div>
+                </aside>
             </div>
-        </div>
+        </main>
     </MainLayout>
 </template>
-
 
 <script setup>
 import MainLayout from '~/layouts/MainLayout.vue';
 import { useUserStore } from '~/stores/user';
+
 const userStore = useUserStore()
-const user = useSupabaseUser()
-const route = useRoute()
+const userId = useCurrentUserId()
 
 definePageMeta({ middleware: "auth" })
 
 let stripe = null
 let elements = null
 let card = null
-let form = null
-let total = ref(0)
 let clientSecret = null
-let currentAddress = ref(null)
-let isProcessing = ref(false)
 
-onBeforeMount(async () => {
+const total = ref(0)
+const currentAddress = ref(null)
+const isProcessing = ref(false)
+const isCardComplete = ref(false)
+const paymentError = ref('')
+
+const formatPrice = (value) => (Number(value || 0) / 100).toFixed(2)
+
+onMounted(async () => {
     if (userStore.checkout.length < 1) {
         return navigateTo('/shoppingcart')
     }
 
-    total.value = 0.00
-    if (user.value) {
-        currentAddress.value = await useFetch(`/api/prisma/get-address-by-user/${user.value.id}`)
-        setTimeout(() => userStore.isLoading = false, 200)
+    total.value = userStore.checkout.reduce((sum, item) => sum + Number(item.price || 0), 0)
+
+    if (userId.value) {
+        currentAddress.value = await $fetch(`/api/prisma/get-address-by-user/${userId.value}`)
     }
-})
 
-watchEffect(() => {
-    if (route.fullPath == '/checkout' && !user.value) {
-        return navigateTo('/auth')
-    }
-})
-
-onMounted(async () => {
-    isProcessing.value = true
-
-    userStore.checkout.forEach(item => {
-        total.value += item.price
-    })
-})
-
-watch(() => total.value, () => {
-    if (total.value > 0) {
-        stripeInit()
-    }
+    userStore.isLoading = false
+    await stripeInit()
 })
 
 const stripeInit = async () => {
-    const runtimeConfig = useRuntimeConfig()
-    stripe = Stripe(runtimeConfig.stripePk);
+    isProcessing.value = true
+    paymentError.value = ''
 
-    let res = await $fetch('/api/stripe/paymentintent', {
+    const runtimeConfig = useRuntimeConfig()
+
+    if (!window.Stripe || !runtimeConfig.public.stripePk) {
+        paymentError.value = 'Stripe is not configured for this environment.'
+        isProcessing.value = false
+        return
+    }
+
+    stripe = window.Stripe(runtimeConfig.public.stripePk)
+
+    const res = await $fetch('/api/stripe/paymentintent', {
         method: 'POST',
         body: {
             amount: total.value,
         }
     })
+
     clientSecret = res.client_secret
+    elements = stripe.elements()
 
-    elements = stripe.elements();
-    var style = {
-        base: {
-            fontSize: "18px",
-        },
-        invalid: {
-            fontFamily: 'Arial, sans-serif',
-            color: "#EE4B2B",
-            iconColor: "#EE4B2B"
+    card = elements.create("card", {
+        hidePostalCode: true,
+        style: {
+            base: {
+                fontSize: "16px",
+                color: "#191919",
+            },
+            invalid: {
+                color: "#B91C1C",
+                iconColor: "#B91C1C"
+            }
         }
-    };
-    card = elements.create("card", { 
-        hidePostalCode: true, 
-        style: style 
-    });
+    })
 
-    // Stripe injects an iframe into the DOM
-    card.mount("#card-element");
-    card.on("change", function (event) {
-        // Disable the Pay button if there are no card details in the Element
-        document.querySelector("button").disabled = event.empty;
-        document.querySelector("#card-error").textContent = event.error ? event.error.message : "";
-    });
+    card.mount("#card-element")
+    card.on("change", (event) => {
+        isCardComplete.value = event.complete
+        paymentError.value = event.error ? event.error.message : ""
+    })
 
     isProcessing.value = false
 }
 
 const pay = async () => {
-    if (currentAddress.value && currentAddress.value.data == '') {
-        showError('Please add shipping address')
-        return 
+    if (!currentAddress.value) {
+        paymentError.value = 'Please add shipping address'
+        return
     }
+
+    if (!userId.value) {
+        return navigateTo('/auth')
+    }
+
     isProcessing.value = true
-    
-    let result = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: { card: card },
+
+    const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: { card },
     })
 
     if (result.error) {
-        showError(result.error.message);
+        paymentError.value = result.error.message
         isProcessing.value = false
-    } else {
-        await createOrder(result.paymentIntent.id)
-        userStore.cart = []
-        userStore.checkout = []
-        setTimeout(() => {
-            return navigateTo('/success')
-        }, 500)
+        return
     }
+
+    await createOrder(result.paymentIntent.id)
+    userStore.cart = []
+    userStore.checkout = []
+    return navigateTo('/success')
 }
 
 const createOrder = async (stripeId) => {
-    await useFetch('/api/prisma/create-order', {
+    await $fetch('/api/prisma/create-order', {
         method: "POST",
         body: {
-            userId: user.value.id,
-            stripeId: stripeId,
-            name: currentAddress.value.data.name,
-            address: currentAddress.value.data.address,
-            zipcode: currentAddress.value.data.zipcode,
-            city: currentAddress.value.data.city,
-            country: currentAddress.value.data.country,
+            userId: userId.value,
+            stripeId,
+            name: currentAddress.value.name,
+            address: currentAddress.value.address,
+            zipcode: currentAddress.value.zipcode,
+            city: currentAddress.value.city,
+            country: currentAddress.value.country,
             products: userStore.checkout
         }
     })
 }
-
-const showError = (errorMsgText) => {
-    let errorMsg = document.querySelector("#card-error");
-
-    errorMsg.textContent = errorMsgText;
-    setTimeout(() => { errorMsg.textContent = "" }, 4000);
-};
-
 </script>

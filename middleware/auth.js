@@ -1,7 +1,7 @@
-export default defineNuxtRouteMiddleware((from, to) => {
+export default defineNuxtRouteMiddleware((to) => {
     const user = useSupabaseUser()
 
-    if (!user.value && to.fullPath == '/checkout') {
+    if (!user.value && ['/checkout', '/orders', '/address'].includes(to.path)) {
         return navigateTo('/auth')
     }
 })
