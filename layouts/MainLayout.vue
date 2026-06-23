@@ -1,6 +1,13 @@
 <template>
-    <div id="MainLayout" class="fixed inset-x-0 top-0 z-50 border-b border-market-line bg-white/95 backdrop-blur">
-        <div class="hidden border-b border-market-line bg-[#FAFAFA] md:block">
+    <div
+        id="MainLayout"
+        class="fixed inset-x-0 top-0 z-50 border-b border-market-line backdrop-blur transition-colors duration-150"
+        :class="userStore.isLoading ? 'bg-market-canvas/95' : 'bg-white/95'"
+    >
+        <div
+            class="hidden border-b border-market-line transition-colors duration-150 md:block"
+            :class="userStore.isLoading ? 'bg-market-canvas' : 'bg-[#FAFAFA]'"
+        >
             <ul class="mx-auto flex h-9 max-w-[1200px] items-center justify-end gap-5 px-3 text-xs text-market-muted">
                 <li class="cursor-pointer hover:text-market-red">Seller center</li>
                 <li class="cursor-pointer hover:text-market-red">Buyer protection</li>
