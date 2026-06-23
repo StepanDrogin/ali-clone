@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 const run = (command) => {
@@ -23,10 +23,9 @@ run('npx nuxt build')
 
 const prismaClientOutput = '.netlify/functions-internal/server/node_modules/.prisma/client'
 const prismaPackageOutput = '.netlify/functions-internal/server/node_modules/@prisma/client'
-const prismaFiles = [
-  'libquery_engine-rhel-openssl-3.0.x.so.node',
-  'schema.prisma'
-]
+const prismaFiles = readdirSync(prismaClientOutput).filter((file) => (
+  file === 'schema.prisma' || /^libquery_engine-.+\.so\.node$/.test(file)
+))
 
 for (const file of prismaFiles) {
   const source = join(prismaClientOutput, file)
