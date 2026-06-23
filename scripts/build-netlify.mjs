@@ -14,6 +14,7 @@ const run = (command) => {
 
 process.env.NITRO_PRESET = process.env.NITRO_PRESET || 'netlify'
 
+run('node scripts/patch-tslib-for-netlify.mjs')
 run('npm run validate:production-env')
 run('npx prisma generate')
 run('npx nuxt build')
