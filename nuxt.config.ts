@@ -15,7 +15,11 @@ export default defineNuxtConfig({
     ],
     runtimeConfig: {
         public: {
-          stripePk: process.env.STRIPE_PK_KEY
+          stripePk: process.env.STRIPE_PK_KEY,
+          authProviders: {
+            google: process.env.NUXT_PUBLIC_AUTH_GOOGLE_ENABLED === 'true',
+            github: process.env.NUXT_PUBLIC_AUTH_GITHUB_ENABLED === 'true'
+          }
         }
     },
     supabase: {

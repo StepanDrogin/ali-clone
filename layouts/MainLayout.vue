@@ -9,10 +9,11 @@
             :class="userStore.isLoading ? 'bg-market-canvas' : 'bg-[#FAFAFA]'"
         >
             <ul class="mx-auto flex h-9 max-w-[1200px] items-center justify-end gap-5 px-3 text-xs text-market-muted">
-                <li class="cursor-pointer hover:text-market-red">Seller center</li>
-                <li class="cursor-pointer hover:text-market-red">Buyer protection</li>
-                <li class="cursor-pointer hover:text-market-red">Help</li>
-                <li class="cursor-pointer hover:text-market-red">Download app</li>
+                <li v-for="link in topMenuLinks" :key="link.to">
+                    <NuxtLink :to="link.to" class="hover:text-market-red">
+                        <span class="ui-span">{{ link.label }}</span>
+                    </NuxtLink>
+                </li>
             </ul>
         </div>
 
@@ -123,25 +124,27 @@
         </header>
 
         <div class="mx-auto hidden max-w-[1200px] items-center gap-2 px-3 pb-3 text-sm text-market-muted md:flex">
-            <span class="ui-span font-semibold text-market-ink">Today deals</span>
-            <span class="ui-span text-market-line">|</span>
-            <span class="ui-span">Free shipping</span>
-            <span class="ui-span">Top rated</span>
-            <span class="ui-span">New arrivals</span>
-            <span class="ui-span">Secure checkout</span>
+            <NuxtLink
+                v-for="(link, index) in categoryMenuLinks"
+                :key="link.to"
+                :to="link.to"
+                class="rounded-md px-2 py-1 hover:bg-market-canvas hover:text-market-red"
+                :class="index === 0 ? 'font-semibold text-market-ink' : ''"
+            >
+                <span class="ui-span">{{ link.label }}</span>
+            </NuxtLink>
         </div>
     </div>
-
-    <Loading v-if="userStore.isLoading" />
 
     <div class="pt-[84px] md:pt-[148px]" />
     <slot />
 
-    <Footer v-if="!userStore.isLoading"/>
+    <Footer />
 </template>
 
 <script setup>
 import { useUserStore } from '~/stores/user';
+import { categoryMenuLinks, topMenuLinks } from '~/utils/navigation';
 
 const userStore = useUserStore()
 const client = useSupabaseClient()
@@ -170,8 +173,14 @@ const searchByName = useDebounce(async () => {
     }
 
     isSearching.value = true
-    searchResults.value = await $fetch(`/api/prisma/search-by-name/${encodeURIComponent(query)}`)
-    isSearching.value = false
+
+    try {
+        searchResults.value = await $fetch(`/api/prisma/search-by-name/${encodeURIComponent(query)}`)
+    } catch (error) {
+        searchResults.value = []
+    } finally {
+        isSearching.value = false
+    }
 }, 180)
 
 const goTo = (path) => {

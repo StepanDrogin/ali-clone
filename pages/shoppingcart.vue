@@ -16,9 +16,9 @@
                     <div v-if="!user" class="mt-5 flex text-center">
                         <NuxtLink
                             to="/auth"
-                            class="w-full rounded-full bg-market-red p-2 text-[18px] font-semibold text-white hover:bg-[#D92F43]"
+                            class="ui-button w-full rounded-full bg-market-red p-2 text-[18px] font-semibold text-white hover:bg-[#D92F43]"
                         >
-                            Sign in
+                            <span class="ui-span">Sign in</span>
                         </NuxtLink>
                     </div>
                 </div>
@@ -88,10 +88,6 @@ import { useUserStore } from '~/stores/user';
 const userStore = useUserStore()
 const user = useSupabaseUser()
 const selectedProductIds = ref([])
-
-onMounted(() => {
-    userStore.isLoading = false
-})
 
 const cards = ref([
     'visa.png',

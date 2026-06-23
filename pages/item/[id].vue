@@ -1,9 +1,15 @@
 <template>
     <MainLayout>
         <main id="ItemPage" class="ui-page mt-4">
-            <div v-if="error" class="ui-panel p-6 text-sm text-market-muted">
-                Product is unavailable or was not found.
-            </div>
+            <ErrorNotice
+                v-if="error"
+                title="Product is unavailable"
+                message="This product could not be loaded or no longer exists in the catalog."
+                tone="warning"
+                icon="ph:package"
+                action-label="Back to deals"
+                action-to="/"
+            />
 
             <div v-else-if="product" class="grid gap-4 md:grid-cols-[0.85fr_1.15fr]">
                 <section class="ui-panel p-3">
@@ -98,12 +104,7 @@ const images = computed(() => {
 watchEffect(() => {
     if (product.value) {
         currentImage.value = product.value.url
-        userStore.isLoading = false
     }
-})
-
-onMounted(() => {
-    userStore.isLoading = false
 })
 
 const isInCart = computed(() => {

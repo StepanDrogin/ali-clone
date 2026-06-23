@@ -7,7 +7,20 @@
                     <h1 class="ui-title pl-4 text-2xl">Orders</h1>
                 </div>
 
-                <div v-if="orders.length" class="mt-4 space-y-4">
+                <div v-if="isOrdersLoading" class="mt-4 space-y-3">
+                    <div v-for="item in 3" :key="item" class="h-[118px] animate-pulse rounded-lg bg-market-canvas" />
+                </div>
+
+                <ErrorNotice
+                    v-else-if="ordersError"
+                    class="mt-4"
+                    title="Orders could not be loaded"
+                    :message="ordersError"
+                    tone="warning"
+                    icon="ph:package"
+                />
+
+                <div v-else-if="orders.length" class="mt-4 space-y-4">
                     <article
                         v-for="order in orders"
                         :key="order.id"
@@ -46,20 +59,25 @@
 
 <script setup>
 import MainLayout from '~/layouts/MainLayout.vue';
-import { useUserStore } from '~/stores/user';
 
 definePageMeta({ middleware: "auth" })
 
-const userStore = useUserStore()
 const userId = useCurrentUserId()
 const orders = ref([])
+const isOrdersLoading = ref(true)
+const ordersError = ref('')
 
 onMounted(async () => {
     if (!userId.value) {
         return navigateTo('/auth')
     }
 
-    orders.value = await $fetch(`/api/prisma/get-all-orders-by-user/${userId.value}`)
-    userStore.isLoading = false
+    try {
+        orders.value = await $fetch(`/api/prisma/get-all-orders-by-user/${userId.value}`)
+    } catch (error) {
+        ordersError.value = error?.data?.message || error?.message || 'Order history is unavailable. Check the database connection and try again.'
+    } finally {
+        isOrdersLoading.value = false
+    }
 })
 </script>

@@ -7,8 +7,8 @@
                     <h1 class="ui-title pl-4 text-2xl">Payment Successful</h1>
                 </div>
                 <p class="pl-[52px] pt-2 text-sm text-market-muted">Thank you. Your payment was received and the order is now available in order history.</p>
-                <NuxtLink to="/orders" class="ml-[52px] mt-5 inline-flex rounded-full bg-market-red px-5 py-2 font-semibold text-white hover:bg-[#D92F43]">
-                    View orders
+                <NuxtLink to="/orders" class="ui-button ml-[52px] mt-5 inline-flex rounded-full bg-market-red px-5 py-2 font-semibold text-white hover:bg-[#D92F43]">
+                    <span class="ui-span">View orders</span>
                 </NuxtLink>
             </section>
         </main>
@@ -17,10 +17,4 @@
 
 <script setup>
 import MainLayout from '~/layouts/MainLayout.vue';
-import { useUserStore } from '~/stores/user';
-const userStore = useUserStore()
-
-onMounted(() => {
-    userStore.isLoading = false
-})
 </script>

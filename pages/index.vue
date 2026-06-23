@@ -45,13 +45,21 @@
                     <div v-for="item in 12" :key="item" class="h-[260px] animate-pulse rounded-lg bg-white" />
                 </div>
 
-                <div v-else-if="error" class="ui-panel p-6 text-sm text-market-muted">
-                    Catalog is temporarily unavailable. Check `DATABASE_URL` and run Prisma seed.
-                </div>
+                <ErrorNotice
+                    v-else-if="error"
+                    title="Catalog is temporarily unavailable"
+                    message="The product API did not return catalog data. Check DATABASE_URL and run the Prisma seed before using this environment."
+                    tone="warning"
+                    icon="ph:database"
+                />
 
-                <div v-else-if="!products.length" class="ui-panel p-6 text-sm text-market-muted">
-                    No products yet. Run `npx prisma db seed` to populate the demo catalog.
-                </div>
+                <ErrorNotice
+                    v-else-if="!products.length"
+                    title="No products yet"
+                    message="Run npx prisma db seed to populate the demo catalog, then refresh the page."
+                    tone="warning"
+                    icon="ph:package"
+                />
 
                 <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     <ProductComponent v-for="product in products" :key="product.id" :product="product"/>
@@ -63,15 +71,9 @@
 
 <script setup>
 import MainLayout from '~/layouts/MainLayout.vue';
-import { useUserStore } from '~/stores/user';
 
-const userStore = useUserStore()
 const { data: products, pending, error } = await useFetch('/api/prisma/get-all-products', {
     default: () => [],
     server: false
-})
-
-onMounted(() => {
-    userStore.isLoading = false
 })
 </script>

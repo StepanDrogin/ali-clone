@@ -3,6 +3,14 @@
         <main id="AddressPage" class="mx-auto mt-4 w-full max-w-[520px] px-3">
             <div class="ui-panel p-4">
                 <h1 class="ui-title mb-3 text-xl">Address Details</h1>
+                <ErrorNotice
+                    v-if="pageError"
+                    class="mb-3"
+                    title="Address could not be loaded"
+                    :message="pageError"
+                    tone="warning"
+                    icon="ph:map-pin"
+                />
                 <form @submit.prevent="submit()">
                     <TextInput
                         class="w-full"
@@ -58,6 +66,15 @@
                         />
                     </button>
                 </form>
+
+                <ErrorNotice
+                    v-if="submitError"
+                    class="mt-3"
+                    title="Address could not be saved"
+                    :message="submitError"
+                    tone="warning"
+                    icon="ph:warning-circle"
+                />
             </div>
         </main>
     </MainLayout>
@@ -65,11 +82,9 @@
 
 <script setup>
 import MainLayout from '~/layouts/MainLayout.vue';
-import { useUserStore } from '~/stores/user';
 
 definePageMeta({ middleware: "auth" })
 
-const userStore = useUserStore()
 const userId = useCurrentUserId()
 
 let contactName = ref('')
@@ -82,13 +97,20 @@ let currentAddress = ref(null)
 let isUpdate = ref(false)
 let isWorking = ref(false)
 let error = ref(null)
+let pageError = ref('')
+let submitError = ref('')
 
 onMounted(async () => {
     if (!userId.value) {
         return navigateTo('/auth')
     }
 
-    currentAddress.value = await $fetch(`/api/prisma/get-address-by-user/${userId.value}`)
+    try {
+        currentAddress.value = await $fetch(`/api/prisma/get-address-by-user/${userId.value}`)
+    } catch (error) {
+        pageError.value = error?.data?.message || error?.message || 'Existing address data is unavailable. You can still submit a new address.'
+        return
+    }
 
     if (currentAddress.value) {
         contactName.value = currentAddress.value.name
@@ -98,8 +120,6 @@ onMounted(async () => {
         country.value = currentAddress.value.country
         isUpdate.value = true
     }
-
-    userStore.isLoading = false
 })
 
 const validate = () => {
@@ -122,6 +142,7 @@ const validate = () => {
 
 const submit = async () => {
     isWorking.value = true
+    submitError.value = ''
 
     if (!validate()) {
         isWorking.value = false
@@ -137,16 +158,22 @@ const submit = async () => {
         country: country.value,
     }
 
-    if (isUpdate.value) {
-        await $fetch(`/api/prisma/update-address/${currentAddress.value.id}`, {
-            method: 'PATCH',
-            body: payload
-        })
-    } else {
-        await $fetch('/api/prisma/add-address/', {
-            method: 'POST',
-            body: payload
-        })
+    try {
+        if (isUpdate.value) {
+            await $fetch(`/api/prisma/update-address/${currentAddress.value.id}`, {
+                method: 'PATCH',
+                body: payload
+            })
+        } else {
+            await $fetch('/api/prisma/add-address/', {
+                method: 'POST',
+                body: payload
+            })
+        }
+    } catch (error) {
+        submitError.value = error?.data?.message || error?.message || 'The address API did not accept the request. Check the database connection and try again.'
+        isWorking.value = false
+        return
     }
 
     isWorking.value = false

@@ -1,13 +1,18 @@
 <template>
   <div class="fixed z-[-1] bg-[#F2F2F2] w-full h-[100vh]"/>
   <NuxtPage />
+  <Loading v-if="userStore.isLoading" />
 
-  <MenuOverlay
-    :class="[
-        {'max-h-[100vh] transition-all duration-200 ease-in visible': userStore.isMenuOverlay },
-        {'max-h-0 transition-all duration-200 ease-out invisible': !userStore.isMenuOverlay },
-    ]"
-  />
+  <Transition
+    enter-active-class="transition-opacity duration-150 ease-out"
+    enter-from-class="opacity-0"
+    enter-to-class="opacity-100"
+    leave-active-class="transition-opacity duration-150 ease-in"
+    leave-from-class="opacity-100"
+    leave-to-class="opacity-0"
+  >
+    <MenuOverlay v-if="userStore.isMenuOverlay" />
+  </Transition>
 </template>
 
 <script setup>
@@ -21,16 +26,25 @@ let removeBeforeEach = null
 let removeAfterEach = null
 let removeRouterErrorHandler = null
 let loadingFallbackTimer = null
+let stopLoadingTimer = null
+let loadingStartedAt = 0
+const minimumLoadingMs = 420
 
-const clearLoadingFallback = () => {
+const clearLoadingTimers = () => {
     if (loadingFallbackTimer) {
         window.clearTimeout(loadingFallbackTimer)
         loadingFallbackTimer = null
     }
+
+    if (stopLoadingTimer) {
+        window.clearTimeout(stopLoadingTimer)
+        stopLoadingTimer = null
+    }
 }
 
 const startLoading = () => {
-    clearLoadingFallback()
+    clearLoadingTimers()
+    loadingStartedAt = Date.now()
     userStore.isLoading = true
 
     loadingFallbackTimer = window.setTimeout(() => {
@@ -40,8 +54,23 @@ const startLoading = () => {
 }
 
 const stopLoading = async () => {
-    clearLoadingFallback()
+    if (loadingFallbackTimer) {
+        window.clearTimeout(loadingFallbackTimer)
+        loadingFallbackTimer = null
+    }
+
     await nextTick()
+    const elapsed = Date.now() - loadingStartedAt
+    const remaining = Math.max(0, minimumLoadingMs - elapsed)
+
+    if (remaining) {
+        stopLoadingTimer = window.setTimeout(() => {
+            userStore.isLoading = false
+            stopLoadingTimer = null
+        }, remaining)
+        return
+    }
+
     userStore.isLoading = false
 }
 
@@ -69,7 +98,7 @@ onBeforeUnmount(() => {
     removeBeforeEach?.()
     removeAfterEach?.()
     removeRouterErrorHandler?.()
-    clearLoadingFallback()
+    clearLoadingTimers()
 })
 
 watch(() => windowWidth.value, () => {

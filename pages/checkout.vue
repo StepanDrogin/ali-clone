@@ -50,6 +50,15 @@
                             <Icon name="mdi:plus" size="18" class="mr-2"/>
                             Add New Address
                         </NuxtLink>
+
+                        <ErrorNotice
+                            v-if="shippingError"
+                            class="mt-3"
+                            title="Shipping address could not be loaded"
+                            :message="shippingError"
+                            tone="warning"
+                            icon="ph:map-pin"
+                        />
                     </div>
 
                     <div id="Items" class="ui-panel mt-4 p-4">
@@ -81,13 +90,15 @@
                                 id="card-element"
                             />
 
-                            <p
-                                id="card-error"
-                                role="alert"
-                                class="min-h-6 pt-2 text-center text-sm font-semibold text-red-700"
-                            >
-                                {{ paymentError }}
-                            </p>
+                            <div id="card-error" class="mt-3 min-h-6">
+                                <ErrorNotice
+                                    v-if="paymentError"
+                                    title="Payment needs attention"
+                                    :message="paymentError"
+                                    tone="warning"
+                                    icon="ph:credit-card"
+                                />
+                            </div>
 
                             <button
                                 :disabled="isProcessing || !isCardComplete || !currentAddress"
@@ -131,6 +142,7 @@ const currentAddress = ref(null)
 const isProcessing = ref(false)
 const isCardComplete = ref(false)
 const paymentError = ref('')
+const shippingError = ref('')
 
 const formatPrice = (value) => (Number(value || 0) / 100).toFixed(2)
 
@@ -142,10 +154,13 @@ onMounted(async () => {
     total.value = userStore.checkout.reduce((sum, item) => sum + Number(item.price || 0), 0)
 
     if (userId.value) {
-        currentAddress.value = await $fetch(`/api/prisma/get-address-by-user/${userId.value}`)
+        try {
+            currentAddress.value = await $fetch(`/api/prisma/get-address-by-user/${userId.value}`)
+        } catch (error) {
+            shippingError.value = error?.data?.message || error?.message || 'Check the database connection and try again.'
+        }
     }
 
-    userStore.isLoading = false
     await stripeInit()
 })
 
@@ -153,47 +168,55 @@ const stripeInit = async () => {
     isProcessing.value = true
     paymentError.value = ''
 
-    const runtimeConfig = useRuntimeConfig()
+    try {
+        const runtimeConfig = useRuntimeConfig()
 
-    if (!window.Stripe || !runtimeConfig.public.stripePk) {
-        paymentError.value = 'Stripe is not configured for this environment.'
-        isProcessing.value = false
-        return
-    }
-
-    stripe = window.Stripe(runtimeConfig.public.stripePk)
-
-    const res = await $fetch('/api/stripe/paymentintent', {
-        method: 'POST',
-        body: {
-            amount: total.value,
+        if (!window.Stripe || !runtimeConfig.public.stripePk) {
+            paymentError.value = 'Stripe is not configured for this environment.'
+            return
         }
-    })
 
-    clientSecret = res.client_secret
-    elements = stripe.elements()
+        stripe = window.Stripe(runtimeConfig.public.stripePk)
 
-    card = elements.create("card", {
-        hidePostalCode: true,
-        style: {
-            base: {
-                fontSize: "16px",
-                color: "#191919",
-            },
-            invalid: {
-                color: "#B91C1C",
-                iconColor: "#B91C1C"
+        const res = await $fetch('/api/stripe/paymentintent', {
+            method: 'POST',
+            body: {
+                amount: total.value,
             }
+        })
+
+        if (!res?.client_secret) {
+            paymentError.value = 'Stripe did not return a payment session. Check STRIPE_SK_KEY and try again.'
+            return
         }
-    })
 
-    card.mount("#card-element")
-    card.on("change", (event) => {
-        isCardComplete.value = event.complete
-        paymentError.value = event.error ? event.error.message : ""
-    })
+        clientSecret = res.client_secret
+        elements = stripe.elements()
 
-    isProcessing.value = false
+        card = elements.create("card", {
+            hidePostalCode: true,
+            style: {
+                base: {
+                    fontSize: "16px",
+                    color: "#191919",
+                },
+                invalid: {
+                    color: "#B91C1C",
+                    iconColor: "#B91C1C"
+                }
+            }
+        })
+
+        card.mount("#card-element")
+        card.on("change", (event) => {
+            isCardComplete.value = event.complete
+            paymentError.value = event.error ? event.error.message : ""
+        })
+    } catch (error) {
+        paymentError.value = error?.data?.message || error?.message || 'Payment could not be prepared. Check Stripe settings and try again.'
+    } finally {
+        isProcessing.value = false
+    }
 }
 
 const pay = async () => {
@@ -206,22 +229,33 @@ const pay = async () => {
         return navigateTo('/auth')
     }
 
-    isProcessing.value = true
-
-    const result = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: { card },
-    })
-
-    if (result.error) {
-        paymentError.value = result.error.message
-        isProcessing.value = false
+    if (!stripe || !card || !clientSecret) {
+        paymentError.value = 'Payment form is still loading. Wait a moment and try again.'
         return
     }
 
-    await createOrder(result.paymentIntent.id)
-    userStore.cart = []
-    userStore.checkout = []
-    return navigateTo('/success')
+    isProcessing.value = true
+    paymentError.value = ''
+
+    try {
+        const result = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: { card },
+        })
+
+        if (result.error) {
+            paymentError.value = result.error.message
+            isProcessing.value = false
+            return
+        }
+
+        await createOrder(result.paymentIntent.id)
+        userStore.cart = []
+        userStore.checkout = []
+        return navigateTo('/success')
+    } catch (error) {
+        paymentError.value = error?.data?.message || error?.message || 'Payment could not be completed. Please try again.'
+        isProcessing.value = false
+    }
 }
 
 const createOrder = async (stripeId) => {
