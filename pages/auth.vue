@@ -70,6 +70,16 @@ const setProviderError = (prov) => {
     }
 }
 
+const getAuthRedirectUrl = () => {
+    const configuredSiteUrl = String(runtimeConfig.public.siteUrl || '').replace(/\/$/, '')
+
+    if (configuredSiteUrl && !window.location.origin.includes('localhost')) {
+        return configuredSiteUrl
+    }
+
+    return window.location.origin
+}
+
 const login = async (prov) => {
     authError.value = null
 
@@ -84,7 +94,7 @@ const login = async (prov) => {
         const { data, error } = await client.auth.signInWithOAuth({
             provider: prov,
             options: {
-                redirectTo: window.location.origin,
+                redirectTo: getAuthRedirectUrl(),
                 skipBrowserRedirect: true
             }
         })
