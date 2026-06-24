@@ -63,10 +63,18 @@
             <div class="ml-auto flex items-center gap-2">
                 <div
                     class="relative hidden h-11 items-center md:flex"
-                    @mouseenter="isAccountMenu = true"
-                    @mouseleave="isAccountMenu = false"
+                    @mouseenter="openAccountMenu"
+                    @mouseleave="scheduleAccountMenuClose"
+                    @focusin="openAccountMenu"
+                    @focusout="scheduleAccountMenuClose"
                 >
-                    <button class="ui-button flex h-11 items-center gap-2 rounded-lg border border-market-line px-3 text-sm font-semibold hover:border-market-red hover:text-market-red">
+                    <button
+                        class="ui-button flex h-11 items-center gap-2 rounded-lg border border-market-line px-3 text-sm font-semibold hover:border-market-red hover:text-market-red"
+                        type="button"
+                        :aria-expanded="isAccountMenu"
+                        aria-controls="AccountMenu"
+                        @click="toggleAccountMenu"
+                    >
                         <Icon name="ph:user" size="18" />
                         <span class="ui-span">Account</span>
                         <Icon name="mdi:chevron-down" size="16" />
@@ -74,27 +82,31 @@
 
                     <div
                         v-if="isAccountMenu"
-                        id="AccountMenu"
-                        class="absolute right-0 top-12 w-[230px] overflow-hidden rounded-lg border border-market-line bg-white text-sm shadow-market"
+                        class="absolute right-0 top-full z-50 w-[230px] pt-2"
                     >
-                        <div v-if="!user" class="p-3">
-                            <div class="mb-3 font-semibold text-market-ink">Welcome back</div>
-                            <NuxtLink
-                                to="/auth"
-                                class="block rounded-lg bg-market-red px-3 py-2 text-center font-semibold text-white hover:bg-[#D92F43]"
-                            >
-                                Login / Register
-                            </NuxtLink>
-                        </div>
-                        <div class="border-t border-market-line">
-                            <button class="ui-button flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-market-canvas" @click="goTo('/orders')">
-                                <Icon name="ph:package" size="18" />
-                                <span class="ui-span">My Orders</span>
-                            </button>
-                            <button v-if="user" class="ui-button flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-market-canvas" @click="signOut">
-                                <Icon name="ph:sign-out" size="18" />
-                                <span class="ui-span">Sign out</span>
-                            </button>
+                        <div
+                            id="AccountMenu"
+                            class="overflow-hidden rounded-lg border border-market-line bg-white text-sm shadow-market"
+                        >
+                            <div v-if="!user" class="p-3">
+                                <div class="mb-3 font-semibold text-market-ink">Welcome back</div>
+                                <NuxtLink
+                                    to="/auth"
+                                    class="ui-button block rounded-lg bg-market-red px-3 py-2 text-center font-semibold text-white hover:bg-[#D92F43]"
+                                >
+                                    <span class="ui-span">Login / Register</span>
+                                </NuxtLink>
+                            </div>
+                            <div class="border-t border-market-line">
+                                <button class="ui-button flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-market-canvas" @click="goTo('/orders')">
+                                    <Icon name="ph:package" size="18" />
+                                    <span class="ui-span">My Orders</span>
+                                </button>
+                                <button v-if="user" class="ui-button flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-market-canvas" @click="signOut">
+                                    <Icon name="ph:sign-out" size="18" />
+                                    <span class="ui-span">Sign out</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -155,6 +167,7 @@ const isCartHover = ref(false)
 const isSearching = ref(false)
 const searchItem = ref('')
 const searchResults = ref([])
+let accountMenuCloseTimer = null
 
 const formatPrice = (value) => (Number(value || 0) / 100).toFixed(2)
 
@@ -183,16 +196,50 @@ const searchByName = useDebounce(async () => {
     }
 }, 180)
 
-const goTo = (path) => {
+const clearAccountMenuCloseTimer = () => {
+    if (accountMenuCloseTimer) {
+        window.clearTimeout(accountMenuCloseTimer)
+        accountMenuCloseTimer = null
+    }
+}
+
+const openAccountMenu = () => {
+    clearAccountMenuCloseTimer()
+    isAccountMenu.value = true
+}
+
+const closeAccountMenu = () => {
+    clearAccountMenuCloseTimer()
     isAccountMenu.value = false
+}
+
+const toggleAccountMenu = () => {
+    clearAccountMenuCloseTimer()
+    isAccountMenu.value = !isAccountMenu.value
+}
+
+const scheduleAccountMenuClose = () => {
+    clearAccountMenuCloseTimer()
+    accountMenuCloseTimer = window.setTimeout(() => {
+        isAccountMenu.value = false
+        accountMenuCloseTimer = null
+    }, 180)
+}
+
+const goTo = (path) => {
+    closeAccountMenu()
     return navigateTo(path)
 }
 
 const signOut = async () => {
     await client.auth.signOut()
-    isAccountMenu.value = false
+    closeAccountMenu()
     return navigateTo('/')
 }
+
+onBeforeUnmount(() => {
+    clearAccountMenuCloseTimer()
+})
 
 watch(() => searchItem.value, () => {
     searchByName()
